@@ -1,0 +1,334 @@
+CREATE TABLE Server (
+    SRV_ID SERIAL,
+    SRV_IP INTEGER UNIQUE,
+    SRV_NAME VARCHAR(64),
+    SRV_LGI_ID INTEGER,
+    PRIMARY KEY (SRV_ID)
+);
+
+CREATE TABLE Login (
+    LGI_ID SERIAL,
+    LGI_AUTHTYPE INTEGER,
+    LGI_SSHPORT INTEGER,
+    LGI_USER VARCHAR(256),
+    LGI_PASSWORD VARCHAR(256),
+    PRIMARY KEY (LGI_ID)
+);
+
+CREATE TABLE Bridge(
+    BRG_ID SERIAL,
+    BRG_SRV_ID INTEGER,
+    BRG_NR INTEGER,
+    BRG_IP VARCHAR(39),
+    PRIMARY KEY (BRG_ID)
+);
+
+CREATE TABLE Report(
+    REP_ID SERIAL,
+    REP_BRG_ID INTEGER,
+    REP_DATE DATE,
+    REP_PORT INTEGER,
+    PRIMARY KEY (REP_ID)
+);
+
+CREATE TABLE CountryReport(
+    CRP_REP_ID INTEGER,
+    CRP_CCO_ID INTEGER,
+    CRP_USERS INTEGER,
+    PRIMARY KEY (CRP_REP_ID, CRP_CCO_ID)
+);
+
+CREATE TABLE TransportReport(
+    TRP_REP_ID INTEGER,
+    TRP_TRA_ID INTEGER,
+    TRP_USERS INTEGER,
+    PRIMARY KEY (TRP_REP_ID, TRP_TRA_ID)
+);
+
+CREATE TABLE CountryCode(
+    CCO_ID INTEGER,
+    CCO_SHORT VARCHAR(2),
+    CCO_LONG VARCHAR(64),
+    PRIMARY KEY (CCO_ID)
+);
+
+CREATE TABLE Transport(
+    TRA_ID SERIAL,
+    TRA_NAME VARCHAR(64),
+    PRIMARY KEY (TRA_ID)
+);
+
+CREATE TABLE DisclosureTo(
+    DSC_BRG_ID INTEGER,
+    DSC_ORG_ID INTEGER,
+    PRIMARY KEY (DSC_BRG_ID, DSC_ORG_ID)
+);
+
+CREATE TABLE Organization(
+    ORG_ID SERIAL,
+    ORG_NAME VARCHAR(256),
+    PRIMARY KEY (ORG_ID)
+);
+
+ALTER TABLE Server ADD CONSTRAINT FK_SRV_LGI
+    FOREIGN KEY (SRV_LGI_ID) REFERENCES Login (LGI_ID) ON DELETE CASCADE;
+
+ALTER TABLE Bridge ADD CONSTRAINT FK_BRG_SRV
+    FOREIGN KEY (BRG_SRV_ID) REFERENCES Server (SRV_ID) ON DELETE CASCADE;
+
+ALTER TABLE Report ADD CONSTRAINT FK_REP_BRG
+    FOREIGN KEY (REP_BRG_ID) REFERENCES Bridge (BRG_ID) ON DELETE CASCADE;
+
+ALTER TABLE CountryReport ADD CONSTRAINT FK_CRP_REP
+    FOREIGN KEY (CRP_REP_ID) REFERENCES Report (REP_ID) ON DELETE CASCADE;
+
+ALTER TABLE CountryReport ADD CONSTRAINT FK_CRP_CCO
+    FOREIGN KEY (CRP_CCO_ID) REFERENCES CountryCode (CCO_ID) ON DELETE CASCADE;
+
+ALTER TABLE TransportReport ADD CONSTRAINT FK_TRP_REP
+    FOREIGN KEY (TRP_REP_ID) REFERENCES Report (REP_ID) ON DELETE CASCADE;
+
+ALTER TABLE TransportReport ADD CONSTRAINT FK_TRP_TRA
+    FOREIGN KEY (TRP_TRA_ID) REFERENCES Transport (TRA_ID) ON DELETE CASCADE;
+
+ALTER TABLE DisclosureTo ADD CONSTRAINT FK_DSC_BRG
+    FOREIGN KEY (DSC_BRG_ID) REFERENCES Bridge (BRG_ID) ON DELETE CASCADE;
+
+ALTER TABLE DisclosureTo ADD CONSTRAINT FK_DSC_ORG
+    FOREIGN KEY (DSC_ORG_ID) REFERENCES Organization (ORG_ID) ON DELETE CASCADE;
+
+
+
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (0,'af','Afghanistan');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (1,'al','Albania');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (2,'dz','Algeria');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (3,'as','American Samoa');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (4,'ad','Andorra');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (5,'ao','Angola');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (6,'ai','Anguilla');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (7,'aq','Antarctica');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (8,'ag','Antigua and Barbuda');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (9,'ar','Argentina');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (10,'am','Armenia');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (11,'aw','Aruba');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (12,'au','Australia');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (13,'at','Austria');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (14,'az','Azerbaijan');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (15,'bs','Bahamas');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (16,'bh','Bahrain');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (17,'bd','Bangladesh');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (18,'bb','Barbados');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (19,'by','Belarus');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (20,'be','Belgium');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (21,'bz','Belize');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (22,'bj','Benin');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (23,'bm','Bermuda');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (24,'bt','Bhutan');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (25,'bo','Bolivia');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (26,'ba','Bosnia and Herzegovina');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (27,'bw','Botswana');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (28,'br','Brazil');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (29,'io','British Indian Ocean Territory');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (30,'vg','British Virgin Islands');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (31,'bn','Brunei');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (32,'bg','Bulgaria');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (33,'bf','Burkina Faso');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (34,'mm','Burma (Myanmar)');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (35,'bi','Burundi');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (36,'kh','Cambodia');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (37,'cm','Cameroon');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (38,'ca','Canada');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (39,'cv','Cape Verde');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (40,'ky','Cayman Islands');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (41,'cf','Central African Republic');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (42,'td','Chad');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (43,'cl','Chile');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (44,'cn','China');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (45,'cx','Christmas Island');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (46,'cc','Cocos (Keeling) Islands');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (47,'co','Colombia');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (48,'km','Comoros');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (49,'cg','Republic of the Congo');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (50,'cd','Democratic Republic of the Congo');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (51,'ck','Cook Islands');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (52,'cr','Costa Rica');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (53,'hr','Croatia');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (54,'cu','Cuba');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (55,'cy','Cyprus');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (56,'cz','Czech Republic');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (57,'dk','Denmark');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (58,'dj','Djibouti');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (59,'dm','Dominica');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (60,'do','Dominican Republic');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (61,'tl','Timor-Leste');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (62,'ec','Ecuador');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (63,'eg','Egypt');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (64,'sv','El Salvador');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (65,'gq','Equatorial Guinea');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (66,'er','Eritrea');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (67,'ee','Estonia');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (68,'et','Ethiopia');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (69,'fk','Falkland Islands');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (70,'fo','Faroe Islands');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (71,'fj','Fiji');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (72,'fi','Finland');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (73,'fr','France');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (74,'pf','French Polynesia');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (75,'ga','Gabon');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (76,'gm','Gambia');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (78,'ge','Georgia');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (79,'de','Germany');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (80,'gh','Ghana');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (81,'gi','Gibraltar');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (82,'gr','Greece');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (83,'gl','Greenland');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (84,'gd','Grenada');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (85,'gu','Guam');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (86,'gt','Guatemala');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (87,'gn','Guinea');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (88,'gw','Guinea-Bissau');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (89,'gy','Guyana');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (90,'ht','Haiti');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (91,'hn','Honduras');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (92,'hk','Hong Kong');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (93,'hu','Hungary');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (94,'is','Iceland');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (95,'in','India');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (96,'id','Indonesia');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (97,'ir','Iran');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (98,'iq','Iraq');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (99,'ie','Ireland');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (100,'im','Isle of Man');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (101,'il','Israel');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (102,'it','Italy');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (103,'ci','Ivory Coast');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (104,'jm','Jamaica');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (105,'jp','Japan');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (106,'je','Jersey');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (107,'jo','Jordan');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (108,'kz','Kazakhstan');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (109,'ke','Kenya');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (110,'ki','Kiribati');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (111,'kw','Kuwait');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (112,'kg','Kyrgyzstan');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (113,'la','Laos');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (114,'lv','Latvia');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (115,'lb','Lebanon');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (116,'ls','Lesotho');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (117,'lr','Liberia');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (118,'ly','Libya');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (119,'li','Liechtenstein');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (120,'lt','Lithuania');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (121,'lu','Luxembourg');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (122,'mo','Macau');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (123,'mk','Macedonia');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (124,'mg','Madagascar');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (125,'mw','Malawi');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (126,'my','Malaysia');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (127,'mv','Maldives');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (128,'ml','Mali');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (129,'mt','Malta');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (130,'mh','Marshall Islands');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (131,'mr','Mauritania');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (132,'mu','Mauritius');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (133,'yt','Mayotte');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (134,'mx','Mexico');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (135,'fm','Micronesia');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (136,'md','Moldova');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (137,'mc','Monaco');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (138,'mn','Mongolia');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (139,'me','Montenegro');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (140,'ms','Montserrat');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (141,'ma','Morocco');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (142,'mz','Mozambique');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (143,'na','Namibia');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (144,'nr','Nauru');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (145,'np','Nepal');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (146,'nl','Netherlands');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (147,'an','Netherlands Antilles');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (148,'nc','New Caledonia');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (149,'nz','New Zealand');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (150,'ni','Nicaragua');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (151,'ne','Niger');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (152,'ng','Nigeria');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (153,'nu','Niue');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (154,'mp','Northern Mariana Islands');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (155,'kp','North Korea');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (156,'no','Norway');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (157,'om','Oman');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (158,'pk','Pakistan');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (159,'pw','Palau');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (160,'pa','Panama');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (161,'pg','Papua New Guinea');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (162,'py','Paraguay');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (163,'pe','Peru');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (164,'ph','Philippines');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (165,'pn','Pitcairn Islands');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (166,'pl','Poland');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (167,'pt','Portugal');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (168,'pr','Puerto Rico');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (169,'qa','Qatar');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (170,'ro','Romania');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (171,'ru','Russia');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (172,'rw','Rwanda');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (173,'bl','Saint Barthelemy');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (174,'ws','Samoa');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (175,'sm','San Marino');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (176,'st','Sao Tome and Principe');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (177,'sa','Saudi Arabia');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (178,'sn','Senegal');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (179,'rs','Serbia');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (180,'sc','Seychelles');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (181,'sl','Sierra Leone');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (182,'sg','Singapore');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (183,'sk','Slovakia');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (184,'si','Slovenia');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (185,'sb','Solomon Islands');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (186,'so','Somalia');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (187,'za','South Africa');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (188,'kr','South Korea');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (189,'es','Spain');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (190,'lk','Sri Lanka');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (191,'sh','Saint Helena');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (192,'kn','Saint Kitts and Nevis');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (193,'lc','Saint Lucia');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (194,'mf','Saint Martin');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (195,'pm','Saint Pierre and Miquelon');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (196,'vc','Saint Vincent and the Grenadines');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (197,'sd','Sudan');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (198,'sr','Suriname');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (199,'sj','Svalbard');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (200,'sz','Swaziland');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (201,'se','Sweden');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (202,'ch','Switzerland');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (203,'sy','Syria');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (204,'tw','Taiwan');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (205,'tj','Tajikistan');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (206,'tz','Tanzania');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (207,'th','Thailand');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (208,'tg','Togo');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (209,'tk','Tokelau');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (210,'to','Tonga');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (211,'tt','Trinidad and Tobago');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (212,'tn','Tunisia');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (213,'tr','Turkey');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (214,'tm','Turkmenistan');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (215,'tc','Turks and Caicos Islands');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (216,'tv','Tuvalu');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (217,'ae','United Arab Emirates');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (218,'ug','Uganda');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (219,'gb','United Kingdom');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (220,'ua','Ukraine');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (221,'uy','Uruguay');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (222,'us','United States');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (223,'uz','Uzbekistan');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (224,'vu','Vanuatu');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (225,'va','Holy See Vatican City)');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (226,'ve','Venezuela');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (227,'vn','Vietnam');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (228,'vi','US Virgin Islands');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (229,'wf','Wallis and Futuna');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (230,'eh','Western Sahara');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (231,'ye','Yemen');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (232,'zm','Zambia');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (233,'zw','Zimbabwe');

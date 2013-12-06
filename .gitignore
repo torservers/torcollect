@@ -1,3 +1,4 @@
 *.pyc
-etc/_torcollect.conf
+*.swo
+*.swp
 
