@@ -1,4 +1,4 @@
-import torcollect.db
+import torcollect.database
 
 class LoginType:
     PASSWORD = 0
@@ -56,13 +56,16 @@ class Server(object):
         db = torcollec.db.Database()
         cur = db.cursor()
         if self.id is None:
-            stmnt = "INSERT INTO Server (SRV_IP, SRV_NAME) VALUES (?,?) RETURNING SRV_ID;"
+            stmnt = "INSERT INTO Server (SRV_IP, SRV_NAME) VALUES (%(ip)s,%(name)s) RETURNING SRV_ID;"
+            cur.execute(stmnt, {'ip':self.ip, 'name':self.name})
+            self.id = cur.fetchone()[0]
         else:
-            stmnt = "UPDATE SERVER SET SRV_NAME = ? WHERE SRV_ID = ?;"
-        cur.execute(stmnt)
+            stmnt = "UPDATE SERVER SET SRV_NAME = %(name)s, SRV_IP = %(ip)s  WHERE SRV_ID = %(id)d;"
+            cur.execute(stmnt, {'ip':self.ip, 'name':self.name, 'id':self.id})
 
     def delete(self):
         db = torcollect.db.Database()
-        connection = db.get_connection()
-        stmnt = "DELETE FROM SERVERS WHERE SRV_ID = ?;"
-        
+        cur = db.cursor()
+        stmnt = "DELETE FROM SERVERS WHERE SRV_ID = %(id)d;"
+        cur.execute(stmnt, {'id':self.id})
+

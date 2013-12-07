@@ -63,9 +63,15 @@ def helptext():
     sys.exit(0)
 
 def run(argv):
-    action = argv[1]
-    subaction = argv[2]
-    parameters = argv[3:]
+    try:
+        action = argv[1]
+    except IndexError:
+        helptext()
+    try:
+        subaction = argv[2]
+        parameters = argv[3:]
+    except IndexError:
+        pass
     if action not in ACTIONS:
         helptext()
     elif action == "collect":
