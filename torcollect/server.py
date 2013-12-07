@@ -39,10 +39,11 @@ class Server(object):
             server.keyfile = keyfile
         else:
             server.login_type = LoginType.PASSWORD
-    
+        return server        
+
     @classmethod
     def get_server_list(cls):
-        db = torcollect.db.Database()
+        db = torcollect.database.Database()
         cur = db.cursor()
         stmnt = "SELECT SRV_NAME, SRV_IP FROM Server;"
         ret = []
@@ -53,7 +54,7 @@ class Server(object):
         return ret
 
     def store(self):
-        db = torcollec.db.Database()
+        db = torcollect.database.Database()
         cur = db.cursor()
         if self.id is None:
             stmnt = "INSERT INTO Server (SRV_IP, SRV_NAME) VALUES (%(ip)s,%(name)s) RETURNING SRV_ID;"
@@ -64,7 +65,7 @@ class Server(object):
             cur.execute(stmnt, {'ip':self.ip, 'name':self.name, 'id':self.id})
 
     def delete(self):
-        db = torcollect.db.Database()
+        db = torcollect.database.Database()
         cur = db.cursor()
         stmnt = "DELETE FROM SERVERS WHERE SRV_ID = %(id)d;"
         cur.execute(stmnt, {'id':self.id})
