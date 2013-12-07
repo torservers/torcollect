@@ -63,6 +63,7 @@ class Server(object):
         else:
             stmnt = "UPDATE SERVER SET SRV_NAME = %(name)s, SRV_IP = %(ip)s  WHERE SRV_ID = %(id)d;"
             cur.execute(stmnt, {'ip':self.ip, 'name':self.name, 'id':self.id})
+        db.commit()
 
     def delete(self):
         db = torcollect.database.Database()

@@ -21,3 +21,6 @@ class Database(object):
     def cursor(self):
         return self.get_connection().cursor()
 
+    def commit(self):
+        self.get_connection().commit()
+
