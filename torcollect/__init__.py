@@ -64,6 +64,53 @@ def helptext():
     sys.exit(0)
 
 
+def server_add(parameters):
+    address = None
+    name = None
+    port = 22
+    user = None
+    password = None
+    keyfile_path = None
+    keyfile_content = None
+    if "--address" not in parameters:
+        helptext()
+    else:
+        address = parameters[parameters.index("--address") + 1]
+    if "--name" not in parameters:
+        helptext()
+    else:
+        name = parameters[parameters.index("--name") + 1]
+    if "--port" in parameters:
+        port = parameters[parameters.index("--port") + 1]
+    if "--user" not in parameters:
+        helptext()
+    else:
+        user = parameters[parameters.index("--user") + 1]
+    if "--password" not in parameters:
+        helptext()
+    else:
+        password = parameters[parameters.index("--password") + 1]
+    if "--keyfile" in parameters:
+        keyfile_path = parameters[parameters.index("--keyfile") + 1]
+        keyfile_content = open(keyfile_path, "r").read()
+    # Verify input
+    server = torcollect.server.Server.create(address, name, port, user,
+                                            password, keyfile_content)
+    server.store()
+
+def server_delete(parameters):
+    if parameters[0] is not None:
+        server = torcollect.server.Server.load(parameters[0])
+        server.delete()
+    else:
+        helptext()
+
+def server_list():
+    server_list = torcollect.server.Server.get_server_list()
+    for server in server_list:
+        print "Name: %s :: %s" % (server.get_name(), server.get_ip())
+
+
 def run(argv):
     try:
         action = argv[1]
@@ -80,50 +127,11 @@ def run(argv):
         pass  # do collectings
     elif action == "server":
         if subaction == "add":
-            address = None
-            name = None
-            port = 22
-            user = None
-            password = None
-            keyfile_path = None
-            keyfile_content = None
-            if "--address" not in parameters:
-                helptext()
-            else:
-                address = parameters[parameters.index("--address") + 1]
-            if "--name" not in parameters:
-                helptext()
-            else:
-                name = parameters[parameters.index("--name") + 1]
-            if "--port" in parameters:
-                port = parameters[parameters.index("--port") + 1]
-            if "--user" not in parameters:
-                helptext()
-            else:
-                user = parameters[parameters.index("--user") + 1]
-            if "--password" not in parameters:
-                helptext()
-            else:
-                password = parameters[parameters.index("--password") + 1]
-            if "--keyfile" in parameters:
-                keyfile_path = parameters[parameters.index("--keyfile") + 1]
-                keyfile_content = open(keyfile_path, "r").read()
-
-            # Verify input
-            server = torcollect.server.Server.create(address, name, port, user,
-                                                     password, keyfile_content)
-            server.store()
-
+            server_add(parameters)
         elif subaction == "-d":
-            if parameters[0] is not None:
-                server = torcollect.server.Server.load(parameters[0])
-                server.delete()
-            else:
-                helptext()
+            server_delete(parameters)
         elif subaction == "list":
-            server_list = torcollect.server.Server.get_server_list()
-            for server in server_list:
-                print "Name: %s :: %s" % (server.get_name(), server.get_ip())
+            server_list()
         else:
             helptext()
     elif action == "organization":
