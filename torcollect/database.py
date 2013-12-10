@@ -7,13 +7,14 @@ PASSWORD = "test"
 
 # TODO: Store those values in configfile
 
+
 class Database(object):
     def __init__(self):
         self.connection = None
 
     def get_connection(self):
         if self.connection is None:
-            self.connection = pgdb.connect(dsn="%s:%s"%(ADDRESS,SCHEMA),
+            self.connection = pgdb.connect(dsn="%s:%s" % (ADDRESS, SCHEMA),
                                            user=USER,
                                            password=PASSWORD)
         return self.connection
@@ -23,4 +24,3 @@ class Database(object):
 
     def commit(self):
         self.get_connection().commit()
-
