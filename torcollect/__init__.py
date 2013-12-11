@@ -17,6 +17,8 @@
 
 import sys
 import torcollect.server
+import torcollect.collector
+import os
 
 HELPTEXT = """
 Collect statistics about TOR-Relays
@@ -92,7 +94,7 @@ def server_add(parameters):
         password = parameters[parameters.index("--password") + 1]
     if "--keyfile" in parameters:
         keyfile_path = parameters[parameters.index("--keyfile") + 1]
-        keyfile_content = open(keyfile_path, "r").read()
+        keyfile_content = open(os.path.expanduser(keyfile_path), "r").read()
     # Verify input
     server = torcollect.server.Server.create(address, name, port, user,
                                             password, keyfile_content)
@@ -124,7 +126,7 @@ def run(argv):
     if action not in ACTIONS:
         helptext()
     elif action == "collect":
-        pass  # do collectings
+        torcollect.collector.collect()
     elif action == "server":
         if subaction == "add":
             server_add(parameters)

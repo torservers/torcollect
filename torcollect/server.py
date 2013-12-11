@@ -25,6 +25,21 @@ class Server(object):
     def get_ip(self):
         return self.ip
 
+    def get_port(self):
+        return self.port
+
+    def get_username(self):
+        return self.username
+
+    def get_password(self):
+        return self.password
+
+    def get_login_type(self):
+        return self.login_type
+
+    def get_keyfile(self):
+        return self.keyfile
+
     @classmethod
     def load(cls, address):
         db = torcollect.database.Database()
@@ -63,16 +78,29 @@ class Server(object):
         return server
 
     @classmethod
-    def get_server_list(cls):
+    def get_server_list(cls,full=False):
         db = torcollect.database.Database()
         cur = db.cursor()
-        stmnt = "SELECT SRV_NAME, SRV_IP FROM Server;"
+        if not full:
+            stmnt = "SELECT SRV_NAME, SRV_IP FROM Server;"
+        else:
+            stmnt = "SELECT SRV_NAME, SRV_IP, SRV_ID,  SRV_NAME, LGI_AUTHTYPE,\
+                     LGI_SSHPORT, LGI_USER, LGI_PASSWORD, LGI_KEYFILE \
+                     FROM Login INNER JOIN Server \
+                       ON (LGI_SRV_ID = SRV_ID);"
         cur.execute(stmnt)
         ret = []
-        for name, ip in cur.fetchall():
+        for row in cur.fetchall():
             srv = Server()
-            srv.ip = ip
-            srv.name = name
+            srv.ip = row[0]
+            srv.name = row[1]
+            if full:
+                srv.id = row[2]
+                srv.login_type = row[3]
+                srv.port = row[4]
+                srv.username = row[5]
+                srv.password = row[6]
+                srv.keyfile = row[7]
             ret.append(srv)
         return ret
 
@@ -81,7 +109,7 @@ class Server(object):
         cur = db.cursor()
         if self.id is None:
             stmnt = "INSERT INTO Server (SRV_IP, SRV_NAME)\
-                     VALUES (%(ip)s,%(name)s) RETURNING SRV_ID;"
+                    VALUES (%(ip)s,%(name)s) RETURNING SRV_ID;"
             cur.execute(stmnt, {'ip': self.ip, 'name': self.name})
             self.id = cur.fetchone()[0]
 
