@@ -22,6 +22,9 @@ class Server(object):
     def get_name(self):
         return self.name
 
+    def get_id(self):
+        return self.id
+
     def get_ip(self):
         return self.ip
 
@@ -54,7 +57,7 @@ class Server(object):
         server = Server()
         server.id = res[0]
         server.ip = address
-        server.name= res[1]
+        server.name = res[1]
         server.login_type = res[2]
         server.port = res[3]
         server.username = res[4]
@@ -78,13 +81,13 @@ class Server(object):
         return server
 
     @classmethod
-    def get_server_list(cls,full=False):
+    def get_server_list(cls, full=False):
         db = torcollect.database.Database()
         cur = db.cursor()
         if not full:
             stmnt = "SELECT SRV_NAME, SRV_IP FROM Server;"
         else:
-            stmnt = "SELECT SRV_NAME, SRV_IP, SRV_ID,  SRV_NAME, LGI_AUTHTYPE,\
+            stmnt = "SELECT SRV_NAME, SRV_IP, SRV_ID,  LGI_AUTHTYPE,\
                      LGI_SSHPORT, LGI_USER, LGI_PASSWORD, LGI_KEYFILE \
                      FROM Login INNER JOIN Server \
                        ON (LGI_SRV_ID = SRV_ID);"
@@ -92,8 +95,9 @@ class Server(object):
         ret = []
         for row in cur.fetchall():
             srv = Server()
-            srv.ip = row[0]
-            srv.name = row[1]
+            print row
+            srv.name = row[0]
+            srv.ip = row[1]
             if full:
                 srv.id = row[2]
                 srv.login_type = row[3]

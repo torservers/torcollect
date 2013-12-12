@@ -5,9 +5,10 @@ import re
 import torcollect.server
 import torcollect.database
 
-LOGPATH = "/var/lib/tor"
+LOGPATH = "/var/lib/tor/"
 NUMBERMATCH = re.compile("^\d*")
 PATHSTRIP = re.compile("^[^ ]* ")
+
 
 class ExitReason:
     OK = 0
@@ -24,41 +25,43 @@ def collect():
         ssh_connection.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         if server.get_login_type() == torcollect.server.LoginType.PASSWORD:
             ssh_connection.connect(server.get_ip(), server.get_port(),
-                                   server.get_username(), 
+                                   server.get_username(),
                                    server.get_password())
         else:
             keyfile = tempfile.NamedTemporaryFile("w")
             keyfile.write(server.get_keyfile())
             keyfile.flush()
-            ssh_connection.connect(server.get_ip(), server.get_port(),
-                                   server.get_username(), 
-                                   server.get_password(),
+            ssh_connection.connect(server.get_ip(),
+                                   port=server.get_port(),
+                                   username=server.get_username(),
+                                   password=server.get_password(),
                                    key_filename=keyfile.name)
 
         # Acquire information
         con_stdin, con_stdout, con_stderr = ssh_connection.exec_command(
             'grep -r bridge-ips /var/lib/tor 2> /dev/null')
         received_data[server] = con_stdout.read().split("\n")
+        print received_data[server]
         if server.get_login_type() == torcollect.server.LoginType.PUBLICKEY:
             keyfile.close()
         ssh_connection.close()
 
     # Declare SQL stmnts
-    
+
     # insert bridge statement
-    ib_stmnt = "IF \
-                    (SELECT COUNT(BRG_ID) FROM Bridge \
+    ib_stmnt = "IF (SELECT COUNT(BRG_ID) FROM Bridge \
                     WHERE BRG_NR = %(brg_nr)d \
-                      AND BRG_SRV_ID = %(nrg_srv_id)d) = 0\
+                      AND BRG_SRV_ID = %(brg_srv_id)d) = 0\
                  THEN \
                     INSERT INTO Bridge (BRG_NR, BRG_IP, BRG_SRV_ID) \
                     VALUES (%(brg_nr)d, %(brg_ip)s, %(brg_srv_id)d) \
-                    RETURNING BRG_ID\
+                    RETURNING BRG_ID;\
                  ELSE \
                     SELECT BRG_ID FROM Bridge \
                     WHERE BRG_NR = %(brg_nr)d \
-                      AND BRG_SRV_ID = %(brg_srv_id)d;"
-    
+                      AND BRG_SRV_ID = %(brg_srv_id)d;\
+                 END IF;"
+
     # create report statement
     cr_stmnt = "INSERT INTO Report (REP_BRG_ID , REP_DATE, REP_PORT ) \
                 VALUES (%(brg_id)d, DATE 'today', %(port)d) \
@@ -76,9 +79,9 @@ def collect():
 
     for server, data in received_data.items():
         for line in data:
-            stripped = line.replace(LOGPATH,"")
+            stripped = line.replace(LOGPATH, "")
             numbermatch = NUMBERMATCH.match(stripped)
-            if numbermatch:
+            if numbermatch and numbermatch.group(0) != '':
                 bridge_number = int(numbermatch.group(0))
             else:
                 continue
@@ -91,13 +94,12 @@ def collect():
                                    'port': 22})
             report_id = cur.fetchone()[0]
 
-            infoline = PATHSTRIP.sub('',stripped)
+            infoline = PATHSTRIP.sub('', stripped)
             for stats in infoline.split(","):
                 country, users = stats.split("=")
-                print ccr_stmnt%{'rep_id': report_id,
+                print ccr_stmnt % {'rep_id': report_id,
                                  'cco_short': country,
                                  'useres': users}
                 # cur.execute(ccr_stmnt, {'rep_id': report_id,
                 #                         'cco_short': country,
                 #                         'useres': users})
-
