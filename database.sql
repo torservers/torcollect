@@ -99,7 +99,7 @@ ALTER TABLE DisclosureTo ADD CONSTRAINT FK_DSC_ORG
     FOREIGN KEY (DSC_ORG_ID) REFERENCES Organization (ORG_ID) ON DELETE CASCADE;
 
 
-
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (-1, '--', 'Unknown');
 INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (0,'af','Afghanistan');
 INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (1,'al','Albania');
 INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (2,'dz','Algeria');
@@ -266,6 +266,7 @@ INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (163,'pe','Peru');
 INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (164,'ph','Philippines');
 INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (165,'pn','Pitcairn Islands');
 INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (166,'pl','Poland');
+INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (234,'ps','Occupied Palestinian Territory');
 INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (167,'pt','Portugal');
 INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (168,'pr','Puerto Rico');
 INSERT INTO CountryCode (CCO_ID, CCO_SHORT, CCO_LONG) VALUES (169,'qa','Qatar');
