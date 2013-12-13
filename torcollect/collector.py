@@ -105,6 +105,6 @@ def collect():
             for stats in infoline.split(","):
                 country, users = stats.split("=")
                 cur.execute(ccr_stmnt, {'rep_id': report_id,
-                                        'cco_short': country,
+                                        'cco_short': country.upper(),
                                         'users': int(users)})
     db.commit()
