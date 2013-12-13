@@ -5,7 +5,7 @@ import re
 import torcollect.server
 import torcollect.database
 
-LOGPATH = "/var/lib/tor/"
+LOGPATH = "/var/lib/torcollect/"
 NUMBERMATCH = re.compile("^\d*")
 PATHSTRIP = re.compile("^[^ ]* ")
 
@@ -39,7 +39,7 @@ def collect():
 
         # Acquire information
         con_stdin, con_stdout, con_stderr = ssh_connection.exec_command(
-            'grep -r bridge-ips /var/lib/tor 2> /dev/null')
+            'grep -r bridge-ips %s 2> /dev/null' % LOGPATH)
         received_data[server] = con_stdout.read().split("\n")
         if server.get_login_type() == torcollect.server.LoginType.PUBLICKEY:
             keyfile.close()
