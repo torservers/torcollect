@@ -10,6 +10,9 @@ NUMBERMATCH = re.compile("^\d*")
 PATHSTRIP = re.compile("^[^ ]* ")
 
 
+# TODO: See how to extract IPs of the bridges to log them
+# TODO: Actually log individual Bridge-IPs
+
 class ExitReason:
     OK = 0
     INVALID_CONFIG = 1
@@ -18,7 +21,8 @@ class ExitReason:
 def collect():
     servers = torcollect.server.Server.get_server_list(full=True)
 
-    received_data = {}
+    country_data = {}
+    transports_data = {}
     for server in servers:
         # Establish SSH connection
         ssh_connection = paramiko.SSHClient()
@@ -38,9 +42,14 @@ def collect():
                                    key_filename=keyfile.name)
 
         # Acquire information
+        #  - Acquire country-related information
         con_stdin, con_stdout, con_stderr = ssh_connection.exec_command(
             'grep -r bridge-ips %s 2> /dev/null' % LOGPATH)
-        received_data[server] = con_stdout.read().split("\n")
+        country_data[server] = con_stdout.read().split("\n")
+        #  - Acquire transport-related information
+        con_stdin, con_stdout, con_stderr = ssh_connection.exec_command(
+            'grep -r bridge-ip-transports %s 2> /dev/null' % LOGPATH)
+        transports_data[server] = con_stdout.read().split("\n")
         if server.get_login_type() == torcollect.server.LoginType.PUBLICKEY:
             keyfile.close()
         ssh_connection.close()
@@ -81,7 +90,7 @@ def collect():
     db = torcollect.database.Database()
     cur = db.cursor()
 
-    for server, data in received_data.items():
+    for server, data in country_data.items():
         for line in data:
             stripped = line.replace(LOGPATH, "")
             numbermatch = NUMBERMATCH.match(stripped)
@@ -108,3 +117,18 @@ def collect():
                                         'cco_short': country.upper(),
                                         'users': int(users)})
     db.commit()
+    for server, data in transports_data.items():
+        for line in data:
+            stripped = line.replace(LOGPATH, "")
+            numbermatch = NUMBERMATCH.match(stripped)
+            if numbermatch and numbermatch.group(0) != '':
+                bridge_number = int(numbermatch.group(0))
+            else:
+                continue
+
+            cur.execute(ib_stmnt, {'brg_nr': bridge_number,
+                                   'brg_srv_id': server.get_id(),
+                                   'brg_ip': "0.0.0.0"})
+            cur.execute(sb_stmnt, {'brg_nr': bridge_number,
+                                   'brg_srv_id': server.get_id()})
+            # TODO: Write SQL statements, Finish methods
