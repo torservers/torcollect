@@ -1,0 +1,27 @@
+body {
+    padding: 10px;
+    background: #000;
+}
+
+.tc_heading {
+    padding: 40px;
+    background-color: #222;
+    color:#af0;
+}
+
+.tc_chart {
+    padding:0px;
+    background-color: #555;
+}
+
+.tc_table {
+    padding:40px;
+    background-color: #777;
+}
+
+.nopad {
+
+    padding:0px;
+    padding-left:0px;
+    padding-right:0px;
+}

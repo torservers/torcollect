@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Torservers.net :: Statistics</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" href="bootstrap/css/bootstrap.min.css" type="text/css">
+    <link rel="stylesheet" href="bootstrap/css/bootstrap-theme.min.css" type="text/css">
+    <link rel="stylesheet" href="torcollect.css" type="text/css">
+</head>
+<body onLoad="">
+    <div class="row tc_heading">
+        <div class="col-md-12"><h1>Torservers.net Statistics</div>
+    </div>
+    <div class="row tc_chart">
+        <div class="col-md-12 nopad" id="graphspace">
+            <svg width="1024" height="100" class="tc_graph">
+                <defs>
+                    <linearGradient id="grad1" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style="stop-color:rgb(160,255,0);stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:rgb(128,255,0);stop-opacity:0.25" />
+                    </linearGradient>
+                </defs>
+                <polygon fill="url(#grad1)" stroke="#557700" stroke-width="0"
+                    points="0,100
+                    0,10
+                    50,30
+                    100,60
+                    150,23
+                    200,42
+                    1024,40
+                    1024,100"/>
+                <polyline fill="none"  stroke="#eeffff" stoke-width="1"
+                    points="0,10
+                    50,30
+                    100,60
+                    150,23
+                    200,42
+                    1024,42 "/>
+            </svg>
+        </div>
+    </div>
+    <div class="row tc_table">
+        <div class="col-md-12">Please select a day to see detailed statistics</div>
+    </div>
+
+    <script type="text/javascript" src="datascript.js"></script>
+</body>
+</html>
