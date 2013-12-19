@@ -73,12 +73,14 @@ load_day_report = (day) ->
             success_resultcodes = [200, 304]
             if req.status in success_resultcodes
                 document.getElementById('reportcontent').innerHTML = req.responseText
+
     url = '/reports/'+day+'.html'
     req.open 'GET', url, true
     req.send null
 
 load_most_recent = (data) ->
     load_day_report get_date_array(data)[data.length-1]
+
 
 initialize_graph()
 load_most_recent(data)
