@@ -114,7 +114,6 @@
 
   generate_reportlink = function(day) {
     return function() {
-      alert("link klixxord" + day);
       return load_day_report(day);
     };
   };
@@ -128,7 +127,7 @@
     circle.setAttribute("stroke", "#aaff00");
     circle.setAttribute("stroke-width", 1);
     circle.setAttribute("fill", "#0f0");
-    circle.setAttribute("xmlns:xlink", "load_day_report(day);");
+    circle.onclick = generate_reportlink(data['d']);
     return svg.appendChild(circle);
   };
 

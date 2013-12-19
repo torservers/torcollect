@@ -39,7 +39,6 @@ get_nth_key = (n) ->
 
 generate_reportlink = (day) ->
     return ->
-        alert "link klixxord"+day
         load_day_report(day)
 
 add_dot = (svg, count, data) ->
@@ -50,8 +49,7 @@ add_dot = (svg, count, data) ->
     circle.setAttribute "stroke", "#aaff00"
     circle.setAttribute "stroke-width", 1
     circle.setAttribute "fill", "#0f0"
-    circle.setAttribute "xmlns:xlink","load_day_report(day);"
-    #circle.onClick = generate_reportlink data['d']
+    circle.onclick = generate_reportlink(data['d'])
     svg.appendChild(circle)
 
 generate_dots = (svg, data) ->
