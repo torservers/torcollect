@@ -75,9 +75,26 @@ transport_table = """
 </table>
 """
 
+bridge_line = """
+<tr>
+    <td><img src="bridge.png" alt="Bridge"></td>
+    <td> Bridge </td>
+    <td> %(users)d </td>
+</tr>
+"""
+
+bridge_table = """
+<h2>Users by Bridge at %(date)s</h2>
+<table class="table">
+%(content)s
+</table>
+"""
+
+
 def escape(plain):
-    html = plain.replace("<","&lt;")
-    return html.replace(">","&gt;")
+    html = plain.replace("<", "&lt;")
+    return html.replace(">", "&gt;")
+
 
 def generate_main_page():
     graphdata = []
@@ -99,7 +116,6 @@ def generate_main_page():
 
 
 def generate_countryreport(date):
-    content = ""
     db = torcollect.database.Database()
     stmnt = "SELECT CCO_SHORT, CCO_LONG, SUM(CRP_USERS) AS USAGE\
             FROM CountryReport INNER JOIN CountryCode \
@@ -117,13 +133,11 @@ def generate_countryreport(date):
                                'name': dataset[1],
                                'users': dataset[2]}
         country_lines.write(line)
-    content = country_table % {'date': date.isoformat(),
-                               'content': country_lines.getvalue()}
-    return content
+    return country_table % {'date': date.isoformat(),
+                            'content': country_lines.getvalue()}
 
 
 def generate_transportreport(date):
-    content = ""
     db = torcollect.database.Database()
     stmnt = "SELECT TRA_NAME, SUM(TRP_USERS) AS USAGE\
              FROM TransportReport INNER JOIN Transport \
@@ -131,7 +145,7 @@ def generate_transportreport(date):
              INNER JOIN Report \
                  ON (REP_ID = TRP_REP_ID) \
              WHERE REP_DATE = %(date)s \
-             GRouP BY TRA_NAME \
+             GROUP BY TRA_NAME \
              ORDER BY USAGE DESC;"
     cur = db.cursor()
     cur.execute(stmnt, {'date': date.isoformat()})
@@ -140,18 +154,34 @@ def generate_transportreport(date):
         line = transport_line % {'transport': escape(dataset[0]),
                                  'users': dataset[1]}
         transport_lines.write(line)
-    content = transport_table % {'date': date.isoformat(),
-                                 'content': transport_lines.getvalue()}
-    return content
+    return transport_table % {'date': date.isoformat(),
+                              'content': transport_lines.getvalue()}
+
+
+def generate_bridgereport(date):
+    db = torcollect.database.Database()
+    stmnt = "SELECT REP_BRG_ID, SUM(CRP_USERS) AS USAGE \
+             FROM CountryReport INNER JOIN Report \
+                ON (REP_ID = CRP_REP_ID) \
+             WHERE REP_DATE = %(date)s \
+             GROUP BY REP_BRG_ID \
+             ORDER BY USAGE DESC;"
+    cur = db.cursor()
+    cur.execute(stmnt, {'date': date.isoformat()})
+    bridge_lines = StringIO.StringIO()
+    for dataset in cur.fetchall():
+        line = bridge_line % {'users': dataset[1]}
+        bridge_lines.write(line)
+    return bridge_table % {'date': date.isoformat(),
+                           'content': bridge_lines.getvalue()}
 
 
 def generate_report_for_day(date):
     content = ""
     content += generate_countryreport(date)
     content += generate_transportreport(date)
+    content += generate_bridgereport(date)
     reportfile = open("%s%s%s" % (REPORTS, date.isoformat(), ".html"), "w")
-    # TODO: Implement transport_reports
     reportfile.write(content)
     reportfile.close()
-
 
