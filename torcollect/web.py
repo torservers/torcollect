@@ -17,7 +17,7 @@ main_page = """
     <link rel="stylesheet" href="bootstrap/css/bootstrap-theme.min.css" type="text/css">
     <link rel="stylesheet" href="torcollect.css" type="text/css">
     <script type="text/javascript">
-        var graphdata = %(graphdata)s
+        var graphdata = %(graphdata)s;
     </script>
 </head>
 <body onLoad="">
@@ -28,9 +28,9 @@ main_page = """
         <div class="col-md-12 nopad" id="graphspace">
             <svg width="1024" height="100" class="tc_graph" id="tc_graph">
                 <defs>
-                    <linearGradient id="grad1" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" style="stop-color:rgb(160,255,0);stop-opacity:1" />
-                    <stop offset="100%" style="stop-color:rgb(128,255,0);stop-opacity:0.25" />
+                    <linearGradient id="grad1" x1="0%%" y1="0%%" x2="0%%" y2="100%%">
+                    <stop offset="0%%" style="stop-color:rgb(160,255,0);stop-opacity:1" />
+                    <stop offset="100%%" style="stop-color:rgb(128,255,0);stop-opacity:0.25" />
                     </linearGradient>
                 </defs>
             </svg>
@@ -77,15 +77,16 @@ transport_table = """
 def generate_main_page():
     graphdata = {}
     db = torcollect.database.Database()
-    stmnt= "SELECT COUNT(CRP_USERS), REP_DATE \
+    stmnt= "SELECT SUM(CRP_USERS), REP_DATE \
             FROM Report INNER JOIN CountryReport \
                 ON (REP_ID = CRP_REP_ID) \
+            GROUP BY (REP_DATE) \
             ORDER BY REP_DATE ASC LIMIT 365;"
     cur = db.cursor()
     cur.execute(stmnt)
     for dataset in cur.fetchall():
         graphdata[dataset[1]] = dataset[0]
-    page = main_page%json.dumps(graphdata)
+    page = main_page%{'graphdata':json.dumps(graphdata)}
     mainpage = open(REPORTPAGE,"w")
     mainpage.write(page)
     mainpage.close()
@@ -98,18 +99,18 @@ def generate_report_for_day(date):
                 ON (CCO_ID = CRP_CCO_ID) \
             INNER JOIN Report \
                 ON (REP_ID = CRP_REP_ID) \
-            WHERE REP_DATA = %(date)s ORDER BY CRP_USERS DESC;"
+            WHERE REP_DATE = %(date)s ORDER BY CRP_USERS DESC;"
     cur = db.cursor()
     cur.execute(stmnt, {'date': date.isoformat()})
     country_lines = StringIO.StringIO()
     for dataset in cur.fetchall():
-        line = country_line%{'code': dataset[0],
+        line = country_line%{'code': dataset[0].lower(),
                              'name': dataset[1],
                              'users': dataset[2]}
-        country_lines.write(country_line)
+        country_lines.write(line)
     content += country_table%{'date': date.isoformat(),
                               'content': country_lines.getvalue()}
-    reportfile.open("%s%s%s"%(REPORTS, date.isoformat(), ".html"))
+    reportfile = open("%s%s%s"%(REPORTS, date.isoformat(), ".html"), "w")
     # TODO: Implement transport_reports
     reportfile.write(content)
     reportfile.close()

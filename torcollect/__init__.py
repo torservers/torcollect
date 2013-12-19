@@ -16,9 +16,11 @@
 #######################################
 
 import sys
+import os
+import datetime
 import torcollect.server
 import torcollect.collector
-import os
+import torcollect.web
 
 HELPTEXT = """
 Collect statistics about TOR-Relays
@@ -58,6 +60,7 @@ ACTIONS = ["collect",
            "server",
            "organization",
            "bridge",
+           "generate",
            "help"]
 
 
@@ -140,5 +143,8 @@ def run(argv):
         pass  # do of organizations editings
     elif action == "bridge":
         pass  # do bridge listings
+    elif action == "generate":
+        torcollect.web.generate_main_page()
+        torcollect.web.generate_report_for_day(datetime.date.today())
     elif action == "help":
         helptext()
