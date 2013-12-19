@@ -37,4 +37,26 @@ initialize_graph = () ->
     polygon.setAttribute "points", get_points(vals)
     polygon.setAttribute "fill", "url(#grad1)"
     svg.appendChild(polygon)
+
+load_day_report = (day) ->
+    if (typeof @XMLHttpRequest == "undefined")
+        console.log 'XMLHttpRequestis undefined'
+        @XMLHttpRequest = ->
+            try
+                return new ActiveXObject("Msxml2.XMLHTTP.6.0")
+            catch error
+            try
+                return new ActiveXObject("Msxml2.XMLHTTP.3.0")
+            catch error
+            try
+                return new ActiveXObject("Microsoft.XMLHTTP")
+            catch error
+            throw new Error("This browser does not support XMLHttpRequest.")
+    req = new XMLHttpRequest()
+    req.addEventListener 'readystatechange', ->
+        if req.readyState is 4
+            success_resultcodes = [200, 304]
+            if req.status in success_resultcodes
+                document.getElementById('reportcontent').innerHTML = req.responseText
+
 initialize_graph()
