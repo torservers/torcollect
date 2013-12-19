@@ -74,32 +74,37 @@ transport_table = """
 </table>
 """
 
+
 def generate_main_page():
-    graphdata = {}
+    graphdata = []
     db = torcollect.database.Database()
-    stmnt= "SELECT SUM(CRP_USERS), REP_DATE \
+    stmnt = "SELECT SUM(CRP_USERS), REP_DATE \
             FROM Report INNER JOIN CountryReport \
                 ON (REP_ID = CRP_REP_ID) \
             GROUP BY (REP_DATE) \
             ORDER BY REP_DATE ASC LIMIT 365;"
     cur = db.cursor()
     cur.execute(stmnt)
+    count = 0
     for dataset in cur.fetchall():
-        graphdata[dataset[1]] = dataset[0]
-    page = main_page%{'graphdata':json.dumps(graphdata)}
-    mainpage = open(REPORTPAGE,"w")
+        graphdata.append({'d': dataset[1], 'u': dataset[0]})
+    page = main_page % {'graphdata': json.dumps(graphdata)}
+    mainpage = open(REPORTPAGE, "w")
     mainpage.write(page)
     mainpage.close()
+
 
 def generate_report_for_day(date):
     content = ""
     db = torcollect.database.Database()
-    stmnt = "SELECT CCO_SHORT, CCO_LONG, CRP_USERS \
+    stmnt = "SELECT CCO_SHORT, CCO_LONG, SUM(CRP_USERS) AS USAGE\
             FROM CountryReport INNER JOIN CountryCode \
                 ON (CCO_ID = CRP_CCO_ID) \
             INNER JOIN Report \
                 ON (REP_ID = CRP_REP_ID) \
-            WHERE REP_DATE = %(date)s ORDER BY CRP_USERS DESC;"
+            WHERE REP_DATE = %(date)s \
+            GROUP BY CCO_SHORT, CCO_LONG \
+            ORDER BY USAGE DESC;"
     cur = db.cursor()
     cur.execute(stmnt, {'date': date.isoformat()})
     country_lines = StringIO.StringIO()
