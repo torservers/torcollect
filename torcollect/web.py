@@ -36,7 +36,7 @@ main_page = """
             </svg>
         </div>
     </div>
-    <div class="row tc_table">
+    <div class="row tc_table" id="reportcontent">
         <div class="col-md-12">Please select a day to see detailed statistics</div>
     </div>
 
