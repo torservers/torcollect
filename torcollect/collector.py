@@ -81,14 +81,14 @@ def collect():
                     REP_DATE = DATE 'today' AND REP_BRG_ID = %(brg_id)d) \
                 THEN \
                     INSERT INTO Report (REP_BRG_ID , REP_DATE, REP_PORT ) \
-                    VALUES (%(brg_id)d, DATE 'today', %(port)d) \
+                    VALUES (%(brg_id)d, DATE 'today', %(port)d); \
                 END IF;\
                 END;\
                 $BODY$;"
 
     # get report id statement
     sr_stmnt = "SELECT REP_ID FROM Report WHERE REP_DATE = DATE 'today' \
-                AND REP_BRG_ID = %(brg_id);"
+                AND REP_BRG_ID = %(brg_id)d;"
 
     # create countryreport statement
     ccr_stmnt = "INSERT INTO CountryReport (CRP_REP_ID, CRP_CCO_ID, \
@@ -115,7 +115,7 @@ def collect():
     ctr_stmnt = "INSERT INTO TransportReport (TRP_REP_ID, TRP_TRA_ID, \
                         TRP_USERS) \
                  VAlUES ( %(rep_id)d, (SELECT TRA_ID FROM TRANSPORT \
-                        WHERE TRA_NAME = %(tra_name)s)), %(users)d);"
+                        WHERE TRA_NAME = %(tra_name)s), %(users)d);"
 
     db = torcollect.database.Database()
     cur = db.cursor()
@@ -172,11 +172,8 @@ def collect():
                 continue
             for stats in infoline.split(","):
                 transport, users = stats.split("=")
-                print ct_stmnt % {'name': transport}
-                print ctr_stmnt % {'rep_id': report_id,
-                                   'tra_name': transport,
-                                   'users': users}
-                #cur.execute(ct_stmnt, {'name': transport})
-                #cur.execute(ctr_stmnt, {'rep_id': report_id,
-                #                        'tra_name': transport,
-                #                        'users': users})
+                cur.execute(ct_stmnt, {'name': transport})
+                cur.execute(ctr_stmnt, {'rep_id': report_id,
+                                        'tra_name': transport,
+                                        'users': int(users)})
+    db.commit()
