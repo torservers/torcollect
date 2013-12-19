@@ -22,7 +22,7 @@ main_page = """
 </head>
 <body onLoad="">
     <div class="row tc_heading">
-        <div class="col-md-12"><h1>Torservers.net Statistics</div>
+    <div class="col-md-12"><h1>Torservers.net Statistics</h1></div>
     </div>
     <div class="row tc_chart">
         <div class="col-md-12 nopad" id="graphspace">
@@ -62,6 +62,7 @@ country_table = """
 
 transport_line = """
 <tr>
+    <td><img src="transport.png" alt="Pluggable Transport"></td>
     <td> %(transport)s </td>
     <td> %(users)d </td>
 </tr>
@@ -69,11 +70,14 @@ transport_line = """
 
 transport_table = """
 <h2>Pluggable Transports Statistics of %(date)s</h2>
-<table class="table>
+<table class="table">
 %(content)s
 </table>
 """
 
+def escape(plain):
+    html = plain.replace("<","&lt;")
+    return html.replace(">","&gt;")
 
 def generate_main_page():
     graphdata = []
@@ -94,7 +98,7 @@ def generate_main_page():
     mainpage.close()
 
 
-def generate_report_for_day(date):
+def generate_countryreport(date):
     content = ""
     db = torcollect.database.Database()
     stmnt = "SELECT CCO_SHORT, CCO_LONG, SUM(CRP_USERS) AS USAGE\
@@ -109,13 +113,45 @@ def generate_report_for_day(date):
     cur.execute(stmnt, {'date': date.isoformat()})
     country_lines = StringIO.StringIO()
     for dataset in cur.fetchall():
-        line = country_line%{'code': dataset[0].lower(),
-                             'name': dataset[1],
-                             'users': dataset[2]}
+        line = country_line % {'code': dataset[0].lower(),
+                               'name': dataset[1],
+                               'users': dataset[2]}
         country_lines.write(line)
-    content += country_table%{'date': date.isoformat(),
-                              'content': country_lines.getvalue()}
-    reportfile = open("%s%s%s"%(REPORTS, date.isoformat(), ".html"), "w")
+    content = country_table % {'date': date.isoformat(),
+                               'content': country_lines.getvalue()}
+    return content
+
+
+def generate_transportreport(date):
+    content = ""
+    db = torcollect.database.Database()
+    stmnt = "SELECT TRA_NAME, SUM(TRP_USERS) AS USAGE\
+             FROM TransportReport INNER JOIN Transport \
+                 ON (TRA_ID = TRP_TRA_ID) \
+             INNER JOIN Report \
+                 ON (REP_ID = TRP_REP_ID) \
+             WHERE REP_DATE = %(date)s \
+             GRouP BY TRA_NAME \
+             ORDER BY USAGE DESC;"
+    cur = db.cursor()
+    cur.execute(stmnt, {'date': date.isoformat()})
+    transport_lines = StringIO.StringIO()
+    for dataset in cur.fetchall():
+        line = transport_line % {'transport': escape(dataset[0]),
+                                 'users': dataset[1]}
+        transport_lines.write(line)
+    content = transport_table % {'date': date.isoformat(),
+                                 'content': transport_lines.getvalue()}
+    return content
+
+
+def generate_report_for_day(date):
+    content = ""
+    content += generate_countryreport(date)
+    content += generate_transportreport(date)
+    reportfile = open("%s%s%s" % (REPORTS, date.isoformat(), ".html"), "w")
     # TODO: Implement transport_reports
     reportfile.write(content)
     reportfile.close()
+
+
