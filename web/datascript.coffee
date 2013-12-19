@@ -37,11 +37,25 @@ get_points = (data, area=true) ->
 get_nth_key = (n) ->
     1
 
+generate_reportlink = (day) ->
+    return ->
+        alert "link klixxord"+day
+        load_day_report(day)
+
 add_dot = (svg, count, data) ->
-    alert "ohai"
+    circle = document.createElementNS svg.namespaceURI, 'circle'
+    circle.setAttribute "cx", get_x_position count
+    circle.setAttribute "cy", get_y_position data['u']
+    circle.setAttribute "r", 10
+    circle.setAttribute "stroke", "#aaff00"
+    circle.setAttribute "stroke-width", 1
+    circle.setAttribute "fill", "#0f0"
+    circle.setAttribute "xmlns:xlink","load_day_report(day);"
+    #circle.onClick = generate_reportlink data['d']
+    svg.appendChild(circle)
 
 generate_dots = (svg, data) ->
-    add_dot svg, i, data for i in [0..(values data).length-1]
+    add_dot svg, i, data[i] for i in [0..data.length-1]
 
 initialize_graph = () ->
     vals = get_user_array data
@@ -52,6 +66,7 @@ initialize_graph = () ->
     polygon.setAttribute "points", get_points(vals)
     polygon.setAttribute "fill", "url(#grad1)"
     svg.appendChild(polygon)
+    generate_dots svg, data
 
 load_day_report = (day) ->
     if (typeof @XMLHttpRequest == "undefined")
@@ -73,7 +88,6 @@ load_day_report = (day) ->
             success_resultcodes = [200, 304]
             if req.status in success_resultcodes
                 document.getElementById('reportcontent').innerHTML = req.responseText
-
     url = '/reports/'+day+'.html'
     req.open 'GET', url, true
     req.send null
@@ -81,6 +95,5 @@ load_day_report = (day) ->
 load_most_recent = (data) ->
     load_day_report get_date_array(data)[data.length-1]
 
-
-initialize_graph()
+initialize_graph(data)
 load_most_recent(data)
