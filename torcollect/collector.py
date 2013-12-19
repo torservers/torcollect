@@ -74,9 +74,21 @@ def collect():
                 AND BRG_SRV_ID = %(brg_srv_id)d ;"
 
     # create report statement
-    cr_stmnt = "INSERT INTO Report (REP_BRG_ID , REP_DATE, REP_PORT ) \
-                VALUES (%(brg_id)d, DATE 'today', %(port)d) \
-                RETURNING REP_ID;"
+    cr_stmnt = "DO\
+                $BODY$\
+                BEGIN\
+                IF NOT EXISTS (SELECT REP_ID FROM Report WHERE \
+                    REP_DATE = DATE 'today' AND REP_BRG_ID = %(brg_id)d) \
+                THEN \
+                    INSERT INTO Report (REP_BRG_ID , REP_DATE, REP_PORT ) \
+                    VALUES (%(brg_id)d, DATE 'today', %(port)d) \
+                END IF;\
+                END;\
+                $BODY$;"
+
+    # get report id statement
+    sr_stmnt = "SELECT REP_ID FROM Report WHERE REP_DATE = DATE 'today' \
+                AND REP_BRG_ID = %(brg_id);"
 
     # create countryreport statement
     ccr_stmnt = "INSERT INTO CountryReport (CRP_REP_ID, CRP_CCO_ID, \
@@ -86,6 +98,24 @@ def collect():
                                        CCO_SHORT = %(cco_short)s) \
                           , -1), \
                           %(users)d);"
+
+    # create transport statement
+    ct_stmnt = "DO\
+                $BODY$\
+                BEGIN \
+                IF NOT EXISTS (SELECT TRA_ID FROM Transport \
+                    WHERE TRA_NAME = %(name)s) \
+                THEN \
+                    INSERT INTO Transport (TRA_NAME) VALUES (%(name)s);\
+                END IF;\
+                END;\
+                $BODY$;"
+
+    # create transportreport statement
+    ctr_stmnt = "INSERT INTO TransportReport (TRP_REP_ID, TRP_TRA_ID, \
+                        TRP_USERS) \
+                 VAlUES ( %(rep_id)d, (SELECT TRA_ID FROM TRANSPORT \
+                        WHERE TRA_NAME = %(tra_name)s)), %(users)d);"
 
     db = torcollect.database.Database()
     cur = db.cursor()
@@ -107,6 +137,7 @@ def collect():
             bridge_id = cur.fetchone()[0]
             cur.execute(cr_stmnt, {'brg_id': bridge_id,
                                    'port': 22})
+            cur.execute(sr_stmnt, {'brg_id': bridge_id})
             report_id = cur.fetchone()[0]
             infoline = PATHSTRIP.sub('', stripped)
             if infoline == '':
@@ -131,4 +162,21 @@ def collect():
                                    'brg_ip': "0.0.0.0"})
             cur.execute(sb_stmnt, {'brg_nr': bridge_number,
                                    'brg_srv_id': server.get_id()})
-            # TODO: Write SQL statements, Finish methods
+            bridge_id = cur.fetchone()[0]
+            cur.execute(cr_stmnt, {'brg_id': bridge_id,
+                                   'port': 22})
+            cur.execute(sr_stmnt, {'brg_id': bridge_id})
+            report_id = cur.fetchone()[0]
+            infoline = PATHSTRIP.sub('', stripped)
+            if infoline == '':
+                continue
+            for stats in infoline.split(","):
+                transport, users = stats.split("=")
+                print ct_stmnt % {'name': transport}
+                print ctr_stmnt % {'rep_id': report_id,
+                                   'tra_name': transport,
+                                   'users': users}
+                #cur.execute(ct_stmnt, {'name': transport})
+                #cur.execute(ctr_stmnt, {'rep_id': report_id,
+                #                        'tra_name': transport,
+                #                        'users': users})
