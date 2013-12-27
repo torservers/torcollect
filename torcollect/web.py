@@ -54,10 +54,12 @@ country_line = """
 """
 
 country_table = """
+<div class="col-md-4">
 <h2>Country Statistics of %(date)s</h2>
 <table class="table">
 %(content)s
 </table>
+</div>
 """
 
 transport_line = """
@@ -69,10 +71,12 @@ transport_line = """
 """
 
 transport_table = """
+<div class="col-md-4">
 <h2>Pluggable Transports Statistics of %(date)s</h2>
 <table class="table">
 %(content)s
 </table>
+</div>
 """
 
 bridge_line = """
@@ -84,10 +88,12 @@ bridge_line = """
 """
 
 bridge_table = """
+<div class="col-md-4">
 <h2>Users by Bridge at %(date)s</h2>
 <table class="table">
 %(content)s
 </table>
+</div>
 """
 
 
