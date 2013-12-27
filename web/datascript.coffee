@@ -1,10 +1,11 @@
 data = graphdata
 
+get_dot_radius = -> 5
 graph_width = () -> return document.getElementById("graphspace").clientWidth
 x_space_between_points = () -> return graph_width() / (data.length - 1)
 get_x_position = (count) -> return Math.round count * x_space_between_points()
-y_space_between_points = () -> return graph_height() / maxim get_user_array data
-get_y_position = (value) -> return Math.round graph_height() - value * y_space_between_points()
+y_space_between_points = () -> return (graph_height() - get_dot_radius()*2) / maxim get_user_array data
+get_y_position = (value) -> return Math.round graph_height() - value * y_space_between_points() + get_dot_radius()
 graph_height = () -> 100
 get_point = (value, count) -> [get_x_position(count) , get_y_position (value) ]
 get_point_string = (value, count) -> return get_point(value,count)[0]+","+get_point(value,count)[1]
@@ -45,10 +46,10 @@ add_dot = (svg, count, data) ->
     circle = document.createElementNS svg.namespaceURI, 'circle'
     circle.setAttribute "cx", get_x_position count
     circle.setAttribute "cy", get_y_position data['u']
-    circle.setAttribute "r", 10
+    circle.setAttribute "r", get_dot_radius()
     circle.setAttribute "stroke", "#aaff00"
     circle.setAttribute "stroke-width", 1
-    circle.setAttribute "fill", "#0f0"
+    circle.setAttribute "fill", "#111"
     circle.onclick = generate_reportlink(data['d'])
     svg.appendChild(circle)
 

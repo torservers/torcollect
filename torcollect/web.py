@@ -45,6 +45,10 @@ main_page = """
 </html>
 """
 
+report_header = """
+<h2>Statistics of Bridge usage at %(date)s</h2>
+"""
+
 country_line = """
 <tr>
     <td><img src="flags/%(code)s.png" alt="%(code)s"></td>
@@ -55,7 +59,7 @@ country_line = """
 
 country_table = """
 <div class="col-md-4">
-<h2>Country Statistics of %(date)s</h2>
+<h4>Country Statistics</h4>
 <table class="table">
 %(content)s
 </table>
@@ -72,7 +76,7 @@ transport_line = """
 
 transport_table = """
 <div class="col-md-4">
-<h2>Pluggable Transports Statistics of %(date)s</h2>
+<h4>Pluggable Transports Statistics</h4>
 <table class="table">
 %(content)s
 </table>
@@ -89,7 +93,7 @@ bridge_line = """
 
 bridge_table = """
 <div class="col-md-4">
-<h2>Users by Bridge at %(date)s</h2>
+<h4>Users by Bridge</h4>
 <table class="table">
 %(content)s
 </table>
@@ -183,7 +187,7 @@ def generate_bridgereport(date):
 
 
 def generate_report_for_day(date):
-    content = ""
+    content = report_header%{'date': date.isoformat()}
     content += generate_countryreport(date)
     content += generate_transportreport(date)
     content += generate_bridgereport(date)
