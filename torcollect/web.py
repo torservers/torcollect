@@ -189,8 +189,8 @@ def generate_bridgereport(date):
 def generate_report_for_day(date):
     content = report_header%{'date': date.isoformat()}
     content += generate_countryreport(date)
-    content += generate_transportreport(date)
     content += generate_bridgereport(date)
+    content += generate_transportreport(date)
     reportfile = open("%s%s%s" % (REPORTS, date.isoformat(), ".html"), "w")
     reportfile.write(content)
     reportfile.close()

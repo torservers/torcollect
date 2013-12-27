@@ -1,6 +1,7 @@
 body {
     padding: 10px;
     background: #000;
+    color: #ddd;
 }
 
 .tc_heading {
@@ -25,3 +26,9 @@ body {
     padding-left:0px;
     padding-right:0px;
 }
+
+h2, h3, h4 {
+    color: #eee;
+}
+
+
