@@ -10,7 +10,7 @@
   };
 
   graph_width = function() {
-    return document.getElementById("graphspace").clientWidth;
+    return document.getElementById("graphspace").clientWidth - 20;
   };
 
   x_space_between_points = function() {
