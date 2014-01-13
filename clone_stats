@@ -2,6 +2,12 @@
 # A script to clone the stats of the tor bridges into a safe environment
 TORCOLLECT=/var/lib/torcollect/
 TORFOLDER=/var/lib/tor/
+
 rm -r $TORCOLLECT*
 find /var/lib/tor -name bridge-stats -type f | sed 's/\/var\/lib\/tor\///g' | sed 's/\/stats\/bridge-stats//g' | xargs -I{} sh -c "mkdir -p $TORCOLLECT{}/stats && cp $TORFOLDER{}/stats/bridge-stats $TORCOLLECT{}/stats/"
 find /var/lib/torcollect -name bridge-stats -type f | xargs chmod g+r $1
+
+# Copy notices files for traffic statistics
+cp /var/log/tor/notices*.log.1 /var/lib/torcollect/
+chmod g+r /var/lib/torcollect/notices*.log.1
+
