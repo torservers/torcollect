@@ -2,7 +2,7 @@
 #-*- coding: utf-8 -*-
 
 ###########################################################
-# © 2011 Daniel 'grindhold' Brendle with torservers.net
+# © 2013/2014 Daniel 'grindhold' Brendle with torservers.net
 #
 # This file is part of torcollect
 #
