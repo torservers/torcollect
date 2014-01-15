@@ -21,18 +21,21 @@
 # If not, see http://www.gnu.org/licenses/.
 ############################################################
 
-import torcollect.paths
+from torcollect.database import Database
 
-class Bridge(object):
+class Organization(object):
     def __init__(self):
-        self.ip = ""
-        self.server = ""
+        self.id = None
+        self.name = ""
 
-    def setup_db(self):
-        """ Create a new database for this bridge"""
-	pass
-
-    def disclose_to(self, organization):
-	""" Disclose this bridge only to a specific organization """
+    def store(self):
+	""" Stores this bridge in the database or creates it newly """
         pass
- 
+
+    def delete(self):
+	""" removes this bridge from the database"""
+        pass
+
+    def get_bridges(self):
+	""" returns bridges that have only been disclosed to this organization"""
+	pass
