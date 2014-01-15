@@ -25,6 +25,7 @@ import datetime
 import torcollect.database
 import StringIO
 import json
+import random
 
 from torcollect.paths import REPORTPAGE, REPORTS
 
@@ -105,7 +106,7 @@ transport_table = """
 """
 
 bridge_line = """
-<tr>
+<tr id="brgl_%(id)d">
     <td><img src="bridge.png" alt="Bridge"></td>
     <td> Bridge </td>
     <td> %(users)d </td>
@@ -118,6 +119,7 @@ bridge_table = """
 <table class="table">
 %(content)s
 </table>
+<script type="text/javascript">brg_traffic_data = %(traffic_data)s;</script>
 </div>
 """
 
@@ -191,20 +193,46 @@ def generate_transportreport(date):
 
 def generate_bridgereport(date):
     db = torcollect.database.Database()
-    stmnt = "SELECT REP_BRG_ID, SUM(CRP_USERS) AS USAGE \
-             FROM CountryReport INNER JOIN Report \
+    stmnt_usage = "SELECT REP_BRG_ID, SUM(CRP_USERS) AS USAGE \
+             FROM CountryReport LEFT JOIN Report \
                 ON (REP_ID = CRP_REP_ID) \
              WHERE REP_DATE = %(date)s \
              GROUP BY REP_BRG_ID \
              ORDER BY USAGE DESC;"
+    stmnt_traffic = "SELECT REP_BRG_ID, REP_TRAFFIC_SENT, \
+                        REP_TRAFFIC_RECEIVED \
+                     FROM Report \
+                     WHERE REP_DATE > DATE %(date)s-7 \
+                     ORDER BY REP_BRG_ID, REP_DATE ASC;"
     cur = db.cursor()
-    cur.execute(stmnt, {'date': date.isoformat()})
+    cur.execute(stmnt_usage, {'date': date.isoformat()})
     bridge_lines = StringIO.StringIO()
+
+    randomized_ids = {}
+
     for dataset in cur.fetchall():
-        line = bridge_line % {'users': dataset[1]}
+        random_id = 0
+        while random_id == 0 or random_id in randomized_ids.keys():
+            random_id = random.randint(0,1000000000)
+        line = bridge_line % {'users': dataset[1],
+                              'id': random_id}
+        randomized_ids[dataset[0]] = random_id
         bridge_lines.write(line)
+    traffic_history = {}
+    cur.execute(stmnt_traffic, {'date': date.isoformat()})
+    for dataset in cur.fetchall():
+        if not randomized_ids.has_key(dataset[0]):
+            continue # TODO: Check under which circumstances this happens
+                     #       Assumption: bridges that had no users wont appear in the
+                     #       Chart
+        if not traffic_history.has_key(randomized_ids[dataset[0]]):
+            traffic_history[randomized_ids[dataset[0]]] = []
+        traffic_history[randomized_ids[dataset[0]]].append({'s':dataset[1],
+                                                            'r':dataset[2]})
+
     return bridge_table % {'date': date.isoformat(),
-                           'content': bridge_lines.getvalue()}
+                           'content': bridge_lines.getvalue(),
+                           'traffic_data': json.dumps(traffic_history)}
 
 
 def generate_report_for_day(date):
