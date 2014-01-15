@@ -1,3 +1,5 @@
+#-*- coding: utf-8 -*-
+
 ##########################################################
 # © 2011 Daniel 'grindhold' Brendle with torservers.net
 #
@@ -25,8 +27,10 @@ import re
 
 import torcollect.server
 import torcollect.database
+import torcollect.heartbeat
 
 LOGPATH = "/var/lib/torcollect/"
+NOTICEPATH = "/var/log/torcollect/"
 NUMBERMATCH = re.compile("^\d*")
 PATHSTRIP = re.compile("^[^ ]* ")
 
@@ -44,6 +48,7 @@ def collect():
 
     country_data = {}
     transports_data = {}
+    traffic_data = {}
     for server in servers:
         # Establish SSH connection
         ssh_connection = paramiko.SSHClient()
@@ -71,6 +76,18 @@ def collect():
         con_stdin, con_stdout, con_stderr = ssh_connection.exec_command(
             'grep -r bridge-ip-transports %s 2> /dev/null' % LOGPATH)
         transports_data[server] = con_stdout.read().split("\n")
+        #  - Acquire traffic-related information
+        # Grep every Heartbeat-line from the notices-files that are from yesterday
+        # and the day before yesterday.
+        # The day before yesterday is necessary because we need a reference point
+        # to calculate the difference from todays traffic to get the traffic that
+        # has been transported.
+        command = 'TC_ONEDAYAGO="$(date --date="1 day ago" +"%%b %%d")" ; \
+                   TC_TWODAYAGO="$(date --date="2 days ago" +"%%b %%d")" ; \
+                   grep Heartbeat %snotices* 2> /dev/null | grep -P "$TC_ONEDAYAGO|$TC_TWODAYAGO"'  
+        con_stdin, con_stdout, con_stderr = ssh_connection.exec_command(
+            command % LOGPATH)
+        traffic_data[server] = con_stdout.read().split("\n")
         if server.get_login_type() == torcollect.server.LoginType.PUBLICKEY:
             keyfile.close()
         ssh_connection.close()
@@ -198,3 +215,5 @@ def collect():
                                         'tra_name': transport,
                                         'users': int(users)})
     db.commit()
+
+
