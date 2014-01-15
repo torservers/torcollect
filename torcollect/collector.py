@@ -88,6 +88,7 @@ def collect():
         con_stdin, con_stdout, con_stderr = ssh_connection.exec_command(
             command % LOGPATH)
         traffic_data[server] = con_stdout.read().split("\n")
+        traffic_data[server].remove('')
         if server.get_login_type() == torcollect.server.LoginType.PUBLICKEY:
             keyfile.close()
         ssh_connection.close()
@@ -155,9 +156,15 @@ def collect():
                  VAlUES ( %(rep_id)d, (SELECT TRA_ID FROM TRANSPORT \
                         WHERE TRA_NAME = %(tra_name)s), %(users)d);"
 
+    # update traffic statement
+    utr_stmnt = "UPDATE Report SET REP_TRAFFIC_SENT = %(rep_traffic_sent)d, \
+                        REP_TRAFFIC_RECEIVED = %(rep_traffic_received)d \
+                 WHERE REP_ID = %(rep_id)d;"
+
     db = torcollect.database.Database()
     cur = db.cursor()
 
+    # parse loglines and create the database entries for the country-statistics
     for server, data in country_data.items():
         for line in data:
             stripped = line.replace(LOGPATH, "")
@@ -186,6 +193,8 @@ def collect():
                                         'cco_short': country.upper(),
                                         'users': int(users)})
     db.commit()
+    
+    # parse loglines and create the database entries for the bridge-user statistics
     for server, data in transports_data.items():
         for line in data:
             stripped = line.replace(LOGPATH, "")
@@ -216,4 +225,55 @@ def collect():
                                         'users': int(users)})
     db.commit()
 
+    # preparing traffic-related data
+    for server, data in traffic_data.items():
+        heartbeat_data = {}
+        for line in data:
+            heartbeat = torcollect.heartbeat.Heartbeat.parse(line)
+            if not heartbeat_data.has_key(heartbeat.bridge_nr):
+                heartbeat_data[heartbeat.bridge_nr] = []
+            heartbeat_data[heartbeat.bridge_nr].append(heartbeat)
+        traffic_data[server] = heartbeat_data
 
+    for server, per_bridge_data in traffic_data.items():
+        for bridge_number, data in per_bridge_data.items():
+            sent, received = _get_sent_received(data)
+            cur.execute(ib_stmnt, {'brg_nr': bridge_number,
+                                   'brg_srv_id': server.get_id(),
+                                   'brg_ip': "0.0.0.0"})
+            cur.execute(sb_stmnt, {'brg_nr': bridge_number,
+                                   'brg_srv_id': server.get_id()})
+            bridge_id = cur.fetchone()[0]
+            cur.execute(cr_stmnt, {'brg_id': bridge_id,
+                                   'port': 22})
+            cur.execute(sr_stmnt, {'brg_id': bridge_id})
+            report_id = cur.fetchone()[0]
+
+            cur.execute(utr_stmnt, {'rep_id': report_id,
+                                    'rep_traffic_sent': sent,
+                                    'rep_traffic_received': received})
+    db.commit()
+
+
+def _get_sent_received(data):
+    # Determine the reference point, which is the with the dataset
+    # with the highest "hours" and the lowest "day" in the timestamp
+    reference_heartbeat = None
+    newest_heartbeat = None
+    for heartbeat in data:
+        if reference_heartbeat is None and newest_heartbeat is None:
+            # initially set reference heartbeat and newest heartbeat
+            reference_heartbeat = heartbeat
+            newest_heartbeat = heartbeat
+            continue
+        if heartbeat.timestamp < reference_heartbeat.timestamp or \
+           (heartbeat.timestamp.day == reference_heartbeat.timestamp.day and \
+            heartbeat.timestamp.hour > reference_heartbeat.timestamp.hour):
+            # set reference hartbeat
+            reference_heartbeat = heartbeat
+
+        if heartbeat.timestamp > newest_heartbeat.timestamp:
+            newest_heartbeat = heartbeat
+    sent = newest_heartbeat.sent - reference_heartbeat.sent
+    received = newest_heartbeat.received - reference_heartbeat.received
+    return sent, received
