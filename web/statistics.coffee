@@ -142,9 +142,23 @@ load_day_report = (day) ->
             success_resultcodes = [200, 304]
             if req.status in success_resultcodes
                 document.getElementById('reportcontent').innerHTML = req.responseText
-                delay 1000, -> m_generate_traffic_graphs()
-                
+                # Do a second request to get supportive json data for minigraphs
+                # This also makes sure that the tables are rendered by the time
+                # the minigraphs are being added
+                json_req = new XMLHttpRequest()
+                json_req.addEventListener 'readystatechange', ->
+                    if json_req.readyState is 4
+                        success_resultcodes = [200, 304]
+                        if json_req.status in success_resultcodes
+                            incoming_data = JSON.parse(json_req.responseText)
+                            m_generate_traffic_graphs incoming_data["traffic_history"]
+                url = '/reports/'+req.day+'.json'
+                json_req.open 'GET', url, true
+                json_req.send null
+                                
+
     url = '/reports/'+day+'.html'
+    req.day = day
     req.open 'GET', url, true
     req.send null
 
@@ -168,7 +182,7 @@ m_graph_width = (id) ->
 # Returns the graphs height. It is being read from the element that
 # the graph will be displayed in. The element is passed via it's dom-Id
 m_graph_height = (id) ->
-    return document.getElementById(id).offsetHeight
+    return document.getElementById(id).offsetHeight - 1
 
 # Returns the space between two points on the x-axis in a graph.
 # The x-point-distance is being calculated based on how many data-objects
@@ -191,13 +205,14 @@ m_get_x_position = (id, data, count) ->
 
 # Returns the y position of a value
 m_get_y_position = (id, data, attributes, value) ->
+    value ?= 0
     return Math.round m_graph_height(id) - value * m_y_space_between_points(id, data, attributes) + get_dot_radius()
 
-m_get_point = (id, data, abs_attributes, count, value) ->
-    return m_get_x_position(id, data, count)+","+m_get_y_position(id, data, attributes, value)
+m_get_point = (id, data, abs_attributes, value, count) ->
+    return m_get_x_position(id, data, count)+","+m_get_y_position(id, data, abs_attributes, value)
 
 m_get_points = (id, data, attribute, abs_attributes, area=true) ->
-    points = (get_point get_attribute_array(data, attribute)[i], i for i in [0..data.length-1])
+    points = (m_get_point id, data, abs_attributes, get_attribute_array(data, attribute)[i], i for i in [0..data.length-1])
     if area
         points.unshift 0+","+m_graph_height(id)
         points.push m_graph_width(id)+","+m_graph_height(id)
@@ -218,19 +233,20 @@ m_generate_sent_polygon = (id, traffic_data) ->
     return polygon
 
 m_get_left = (element) ->
-    if element.parentNode == document.body
-        return element.offsetLeft
+    if element.tagName == "DIV"
+        return element.offsetLeft - 2
     else
-        return m_get_left element.parentNode + element.offsetLeft
+        return m_get_left(element.parentNode) + element.offsetLeft
 
 m_get_top = (element) ->
-    if element.parentNode == document.body
-        return element.offsetTop
+    #alert element.offsetTop+" from "+element
+    if element.tagName == "DIV"
+        return element.offsetTop - 2
     else
-        return m_get_top element.parentNode + element.offsetTop
+        return m_get_top(element.parentNode) + element.offsetTop
 
 # generate the trafficgraph for a tablerow
-m_generate_traffic_graph = (id) ->
+m_generate_traffic_graph = (id, brg_traffic_data) ->
     svg_ns = "http://www.w3.org/2000/svg"
     svg = document.createElementNS svg_ns, 'svg'
     tr = document.getElementById id
@@ -244,8 +260,8 @@ m_generate_traffic_graph = (id) ->
     svg.style.position = "absolute"
     svg.style.top = m_get_top(tr)+"px"
     svg.style.left = m_get_left(tr)+"px"
-    svg.style.zIndex = -1
+    svg.style.zIndex = 100
 
-m_generate_traffic_graphs = () ->
-    (generate_traffic_graph "brgl_"+id for id in keys brg_traffic_data)
+m_generate_traffic_graphs = (brg_traffic_data) ->
+    (m_generate_traffic_graph "brgl_"+id, brg_traffic_data for id in keys brg_traffic_data)
     

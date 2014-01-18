@@ -215,18 +215,30 @@
     }
     req = new XMLHttpRequest();
     req.addEventListener('readystatechange', function() {
-      var success_resultcodes, _ref;
+      var json_req, success_resultcodes, url, _ref;
       if (req.readyState === 4) {
         success_resultcodes = [200, 304];
         if (_ref = req.status, __indexOf.call(success_resultcodes, _ref) >= 0) {
           document.getElementById('reportcontent').innerHTML = req.responseText;
-          return delay(1000, function() {
-            return m_generate_traffic_graphs();
+          json_req = new XMLHttpRequest();
+          json_req.addEventListener('readystatechange', function() {
+            var incoming_data, _ref1;
+            if (json_req.readyState === 4) {
+              success_resultcodes = [200, 304];
+              if (_ref1 = json_req.status, __indexOf.call(success_resultcodes, _ref1) >= 0) {
+                incoming_data = JSON.parse(json_req.responseText);
+                return m_generate_traffic_graphs(incoming_data["traffic_history"]);
+              }
+            }
           });
+          url = '/reports/' + req.day + '.json';
+          json_req.open('GET', url, true);
+          return json_req.send(null);
         }
       }
     });
     url = '/reports/' + day + '.html';
+    req.day = day;
     req.open('GET', url, true);
     return req.send(null);
   };
@@ -244,7 +256,7 @@
   };
 
   m_graph_height = function(id) {
-    return document.getElementById(id).offsetHeight;
+    return document.getElementById(id).offsetHeight - 1;
   };
 
   m_x_space_between_points = function(id, data) {
@@ -260,11 +272,14 @@
   };
 
   m_get_y_position = function(id, data, attributes, value) {
+    if (value == null) {
+      value = 0;
+    }
     return Math.round(m_graph_height(id) - value * m_y_space_between_points(id, data, attributes) + get_dot_radius());
   };
 
-  m_get_point = function(id, data, abs_attributes, count, value) {
-    return m_get_x_position(id, data, count) + "," + m_get_y_position(id, data, attributes, value);
+  m_get_point = function(id, data, abs_attributes, value, count) {
+    return m_get_x_position(id, data, count) + "," + m_get_y_position(id, data, abs_attributes, value);
   };
 
   m_get_points = function(id, data, attribute, abs_attributes, area) {
@@ -276,7 +291,7 @@
       var _i, _ref, _results;
       _results = [];
       for (i = _i = 0, _ref = data.length - 1; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
-        _results.push(get_point(get_attribute_array(data, attribute)[i], i));
+        _results.push(m_get_point(id, data, abs_attributes, get_attribute_array(data, attribute)[i], i));
       }
       return _results;
     })();
@@ -306,22 +321,22 @@
   };
 
   m_get_left = function(element) {
-    if (element.parentNode === document.body) {
-      return element.offsetLeft;
+    if (element.tagName === "DIV") {
+      return element.offsetLeft - 2;
     } else {
-      return m_get_left(element.parentNode + element.offsetLeft);
+      return m_get_left(element.parentNode) + element.offsetLeft;
     }
   };
 
   m_get_top = function(element) {
-    if (element.parentNode === document.body) {
-      return element.offsetTop;
+    if (element.tagName === "DIV") {
+      return element.offsetTop - 2;
     } else {
-      return m_get_top(element.parentNode + element.offsetTop);
+      return m_get_top(element.parentNode) + element.offsetTop;
     }
   };
 
-  m_generate_traffic_graph = function(id) {
+  m_generate_traffic_graph = function(id, brg_traffic_data) {
     var svg, svg_ns, tr, traffic_data;
     svg_ns = "http://www.w3.org/2000/svg";
     svg = document.createElementNS(svg_ns, 'svg');
@@ -336,16 +351,16 @@
     svg.style.position = "absolute";
     svg.style.top = m_get_top(tr) + "px";
     svg.style.left = m_get_left(tr) + "px";
-    return svg.style.zIndex = -1;
+    return svg.style.zIndex = 100;
   };
 
-  m_generate_traffic_graphs = function() {
+  m_generate_traffic_graphs = function(brg_traffic_data) {
     var id, _i, _len, _ref, _results;
     _ref = keys(brg_traffic_data);
     _results = [];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       id = _ref[_i];
-      _results.push(generate_traffic_graph("brgl_" + id));
+      _results.push(m_generate_traffic_graph("brgl_" + id, brg_traffic_data));
     }
     return _results;
   };

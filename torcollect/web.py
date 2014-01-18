@@ -119,7 +119,6 @@ bridge_table = """
 <table class="table">
 %(content)s
 </table>
-<script type="text/javascript">brg_traffic_data = %(traffic_data)s;</script>
 </div>
 """
 
@@ -230,17 +229,27 @@ def generate_bridgereport(date):
         traffic_history[randomized_ids[dataset[0]]].append({'s':dataset[1],
                                                             'r':dataset[2]})
 
-    return bridge_table % {'date': date.isoformat(),
-                           'content': bridge_lines.getvalue(),
-                           'traffic_data': json.dumps(traffic_history)}
+    return (bridge_table % {'date': date.isoformat(),
+                           'content': bridge_lines.getvalue()},
+           traffic_history)
 
 
 def generate_report_for_day(date):
     content = report_header%{'date': date.isoformat()}
     content += generate_countryreport(date)
-    content += generate_bridgereport(date)
+    bridge_html, bridge_json = generate_bridgereport(date)
+    content += bridge_html
     content += generate_transportreport(date)
+    
+    json_structure = {'traffic_history':bridge_json,
+                      'country_user_history':None,
+                      'transport_history':None}
+
     reportfile = open("%s%s%s" % (REPORTS, date.isoformat(), ".html"), "w")
     reportfile.write(content)
     reportfile.close()
+    
+    jsonfile = open("%s%s%s" % (REPORTS, date.isoformat(), ".json"), "w")
+    jsonfile.write(json.dumps(json_structure))
+    jsonfile.close()
 
