@@ -221,15 +221,15 @@ m_get_points = (id, data, attribute, abs_attributes, area=true) ->
 m_generate_received_polygon = (id, traffic_data) ->
     svg_ns = "http://www.w3.org/2000/svg"
     polygon = document.createElementNS svg_ns, 'polygon'
-    polygon.setAttribute 'points', m_get_points(id, traffic_data, 'r', ['r','s'])
-    polygon.setAttribute 'fill', '#00f'
+    polygon.setAttribute 'points', m_get_points(id, traffic_data, ['s','r'], ['r','s'])
+    polygon.setAttribute 'fill', 'url(#grad3)'
     return polygon
 
 m_generate_sent_polygon = (id, traffic_data) ->
     svg_ns = "http://www.w3.org/2000/svg"
     polygon = document.createElementNS svg_ns, 'polygon'
     polygon.setAttribute 'points', m_get_points(id, traffic_data, 's', ['r','s'])
-    polygon.setAttribute 'fill', '#f00'
+    polygon.setAttribute 'fill', "url(#grad2)"
     return polygon
 
 m_get_left = (element) ->
@@ -245,14 +245,55 @@ m_get_top = (element) ->
     else
         return m_get_top(element.parentNode) + element.offsetTop
 
+m_generate_traffic_gradient = ->
+    svg_ns = "http://www.w3.org/2000/svg"
+    defs = document.createElementNS svg_ns, 'defs'
+    grad = document.createElementNS svg_ns, 'linearGradient'
+    grad.setAttribute 'id', 'grad3'
+    grad.setAttribute 'y2', '100%'
+    grad.setAttribute 'x2', '0%'
+    grad.setAttribute 'y1', '0%'
+    grad.setAttribute 'x1', '0%'
+    s1 = document.createElementNS svg_ns, 'stop'
+    s1.style.stopColor = '#00f'
+    s1.style.stopOpacity = "0.25"
+    s1.setAttribute 'offset', '0%'
+    s2 = document.createElementNS svg_ns, 'stop'
+    s2.style.stopColor = '#00f'
+    s2.style.stopOpacity = "0.1"
+    s2.setAttribute 'offset', '100%'
+    grad.appendChild s1
+    grad.appendChild s2
+    defs.appendChild grad
+    grad2 = document.createElementNS svg_ns, 'linearGradient'
+    grad2.setAttribute 'id', 'grad2'
+    grad2.setAttribute 'y2', '100%'
+    grad2.setAttribute 'x2', '0%'
+    grad2.setAttribute 'y1', '0%'
+    grad2.setAttribute 'x1', '0%'
+    s3 = document.createElementNS svg_ns, 'stop'
+    s3.style.stopColor = '#f00'
+    s3.style.stopOpacity = "0.25"
+    s3.setAttribute 'offset', '0%'
+    s4 = document.createElementNS svg_ns, 'stop'
+    s4.style.stopColor = 'f00'
+    s4.style.stopOpacity = "0.1"
+    s4.setAttribute 'offset', '100%'
+    grad2.appendChild s3
+    grad2.appendChild s4
+    defs.appendChild grad2
+    
+    return defs
+
 # generate the trafficgraph for a tablerow
 m_generate_traffic_graph = (id, brg_traffic_data) ->
     svg_ns = "http://www.w3.org/2000/svg"
     svg = document.createElementNS svg_ns, 'svg'
     tr = document.getElementById id
-    svg.setAttribute 'width', tr.offsetWidth
-    svg.setAttribute 'height', tr.offsetHeight
+    svg.setAttribute 'width', tr.offsetWidth - 1
+    svg.setAttribute 'height', tr.offsetHeight - 1
     traffic_data = brg_traffic_data[id.split("_")[1].toString()]
+    svg.appendChild m_generate_traffic_gradient()
     svg.appendChild m_generate_received_polygon id, traffic_data
     svg.appendChild m_generate_sent_polygon id, traffic_data
     document.body.appendChild svg
@@ -260,7 +301,7 @@ m_generate_traffic_graph = (id, brg_traffic_data) ->
     svg.style.position = "absolute"
     svg.style.top = m_get_top(tr)+"px"
     svg.style.left = m_get_left(tr)+"px"
-    svg.style.zIndex = 100
+    svg.style.zIndex = 0
 
 m_generate_traffic_graphs = (brg_traffic_data) ->
     (m_generate_traffic_graph "brgl_"+id, brg_traffic_data for id in keys brg_traffic_data)
