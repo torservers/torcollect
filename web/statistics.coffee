@@ -59,6 +59,9 @@ values = (dictionary) ->
 keys = (dictionary) ->
     (k for k,v of dictionary)
 
+#delays the execution of a function
+delay = (time, f) -> setTimeout f, time
+
 # return user_array in data
 get_user_array = (data) ->
     (set['u'] for set in data)
@@ -66,6 +69,12 @@ get_user_array = (data) ->
 # return date_array in data
 get_date_array = (data) ->
     (set['d'] for set in data)
+
+# returns an array of one specific attribute from a list of objects
+# if more that one attributes is given, the chosen attributes will be summed up
+get_attribute_array = (data, attributes) ->
+    ((set[attribute] for set in data) for attribute in attributes).reduce (x,y) ->
+        (x[i]+y[i] for i in  [0..x.length-1])
 
 # return the points as a string ready to feed into the <polygon>'s points attribute
 get_points = (data, area=true) ->
@@ -133,6 +142,8 @@ load_day_report = (day) ->
             success_resultcodes = [200, 304]
             if req.status in success_resultcodes
                 document.getElementById('reportcontent').innerHTML = req.responseText
+                delay 1000, -> m_generate_traffic_graphs()
+                
     url = '/reports/'+day+'.html'
     req.open 'GET', url, true
     req.send null
@@ -143,3 +154,98 @@ load_most_recent = (data) ->
 
 initialize_graph(data)
 load_most_recent(data)
+
+
+###################################
+# Minigraphs
+###################################
+
+# Returns the graphs width. It is being read from the element that
+# the graph will be displayed in. This element is passed via it's dom-ID
+m_graph_width = (id) ->
+    return document.getElementById(id).offsetWidth
+
+# Returns the graphs height. It is being read from the element that
+# the graph will be displayed in. The element is passed via it's dom-Id
+m_graph_height = (id) ->
+    return document.getElementById(id).offsetHeight
+
+# Returns the space between two points on the x-axis in a graph.
+# The x-point-distance is being calculated based on how many data-objects
+# are in the data array that is to be displayed
+m_x_space_between_points = (id, data) ->
+    return m_graph_width(id) / (data.length - 1)
+
+# Returns the space (in px) per step on the scale of the data contained in the list.
+# attributes should contain a set of attributes found in the data-objects that are to
+# be taken into account.
+# E.G. when you have a list that contains objects that has an attribute 's' that you want
+# to display, you pass ('s') in attributes. if you want two or more attributes that should
+# be displayed in the graph together, you can do so, too
+m_y_space_between_points = (id, data, attributes) ->
+    return (m_graph_height(id) - get_dot_radius()*2) / maxim get_attribute_array data, attributes
+
+# Returns the X-position of a point
+m_get_x_position = (id, data, count) ->
+    return Math.round count * m_x_space_between_points(id, data)
+
+# Returns the y position of a value
+m_get_y_position = (id, data, attributes, value) ->
+    return Math.round m_graph_height(id) - value * m_y_space_between_points(id, data, attributes) + get_dot_radius()
+
+m_get_point = (id, data, abs_attributes, count, value) ->
+    return m_get_x_position(id, data, count)+","+m_get_y_position(id, data, attributes, value)
+
+m_get_points = (id, data, attribute, abs_attributes, area=true) ->
+    points = (get_point get_attribute_array(data, attribute)[i], i for i in [0..data.length-1])
+    if area
+        points.unshift 0+","+m_graph_height(id)
+        points.push m_graph_width(id)+","+m_graph_height(id)
+    return points.join " "
+
+m_generate_received_polygon = (id, traffic_data) ->
+    svg_ns = "http://www.w3.org/2000/svg"
+    polygon = document.createElementNS svg_ns, 'polygon'
+    polygon.setAttribute 'points', m_get_points(id, traffic_data, 'r', ['r','s'])
+    polygon.setAttribute 'fill', '#00f'
+    return polygon
+
+m_generate_sent_polygon = (id, traffic_data) ->
+    svg_ns = "http://www.w3.org/2000/svg"
+    polygon = document.createElementNS svg_ns, 'polygon'
+    polygon.setAttribute 'points', m_get_points(id, traffic_data, 's', ['r','s'])
+    polygon.setAttribute 'fill', '#f00'
+    return polygon
+
+m_get_left = (element) ->
+    if element.parentNode == document.body
+        return element.offsetLeft
+    else
+        return m_get_left element.parentNode + element.offsetLeft
+
+m_get_top = (element) ->
+    if element.parentNode == document.body
+        return element.offsetTop
+    else
+        return m_get_top element.parentNode + element.offsetTop
+
+# generate the trafficgraph for a tablerow
+m_generate_traffic_graph = (id) ->
+    svg_ns = "http://www.w3.org/2000/svg"
+    svg = document.createElementNS svg_ns, 'svg'
+    tr = document.getElementById id
+    svg.setAttribute 'width', tr.offsetWidth
+    svg.setAttribute 'height', tr.offsetHeight
+    traffic_data = brg_traffic_data[id.split("_")[1].toString()]
+    svg.appendChild m_generate_received_polygon id, traffic_data
+    svg.appendChild m_generate_sent_polygon id, traffic_data
+    document.body.appendChild svg
+    svg.style.display = "block"
+    svg.style.position = "absolute"
+    svg.style.top = m_get_top(tr)+"px"
+    svg.style.left = m_get_left(tr)+"px"
+    svg.style.zIndex = -1
+
+m_generate_traffic_graphs = () ->
+    (generate_traffic_graph "brgl_"+id for id in keys brg_traffic_data)
+    
