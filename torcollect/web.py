@@ -72,7 +72,7 @@ report_header = """
 """
 
 country_line = """
-<tr>
+<tr id="crpl_%(code)s">
     <td><img src="flags/%(code)s.png" alt="%(code)s"></td>
     <td> %(name)s </td>
     <td> %(users)d </td>
@@ -157,6 +157,14 @@ def generate_countryreport(date):
             WHERE REP_DATE = %(date)s \
             GROUP BY CCO_SHORT, CCO_LONG \
             ORDER BY USAGE DESC;"
+    stmnt_history = "SELECT CCO_SHORT, SUM(CRP_USERS) AS USAGE\
+            FROM CountryReport INNER JOIN CountryCode \
+                ON (CCO_ID = CRP_CCO_ID) \
+            INNER JOIN Report \
+                ON (REP_ID = CRP_REP_ID) \
+            WHERE REP_DATE > DATE %(date)s-7 \
+            GROUP BY CCO_SHORT, CCO_LONG, REP_DATE \
+            ORDER BY CCO_SHORT, REP_DATE ASC;"
     cur = db.cursor()
     cur.execute(stmnt, {'date': date.isoformat()})
     country_lines = StringIO.StringIO()
@@ -165,8 +173,17 @@ def generate_countryreport(date):
                                'name': dataset[1],
                                'users': dataset[2]}
         country_lines.write(line)
-    return country_table % {'date': date.isoformat(),
-                            'content': country_lines.getvalue()}
+    cur.execute(stmnt_history, {'date': date.isoformat()})
+
+    country_history = {}
+    for dataset in cur.fetchall():
+        ccode = dataset[0].lower()
+        if not country_history.has_key(ccode):
+            country_history[ccode] = []
+        country_history[ccode].append({'c':int(dataset[1])})
+    return (country_table % {'date': date.isoformat(),
+                            'content': country_lines.getvalue()},
+            country_history)
 
 
 def generate_transportreport(date):
@@ -236,13 +253,15 @@ def generate_bridgereport(date):
 
 def generate_report_for_day(date):
     content = report_header%{'date': date.isoformat()}
-    content += generate_countryreport(date)
+    country_html, country_json = generate_countryreport(date)
     bridge_html, bridge_json = generate_bridgereport(date)
+
+    content += country_html
     content += bridge_html
     content += generate_transportreport(date)
-    
+
     json_structure = {'traffic_history':bridge_json,
-                      'country_user_history':None,
+                      'country_user_history':country_json,
                       'transport_history':None}
 
     reportfile = open("%s%s%s" % (REPORTS, date.isoformat(), ".html"), "w")
