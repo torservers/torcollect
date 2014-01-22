@@ -68,7 +68,8 @@ class Heartbeat(object):
     @classmethod
     def _parse_uptime(cls, groupdict):
         timedict = {}
-        timedict['days'] = int(groupdict['days'])
+        if groupdict.has_key("days"):
+            timedict['days'] = int(groupdict['days'])
         hours, minutes = groupdict['hours'].split(":")
         timedict['hours'] = int(hours)
         timedict['minutes'] = int(minutes)
@@ -76,7 +77,7 @@ class Heartbeat(object):
 
     RE_NUMBER = re.compile(r"^\d+")
     RE_TIMESTAMP = re.compile(r"\w{3} \d{2} \d{2}:\d{2}:\d{2}\.\d{3}")
-    RE_UPTIME = re.compile(r"((?P<days>\d+?) days )?((?P<hours>(\d\d?:\d{2})?) hours)?")
+    RE_UPTIME = re.compile(r"((?P<days>\d+?) days? )?((?P<hours>(\d\d?:\d{2})?) hours)?")
     RE_BYTES = re.compile(r"\d+\.\d{2} [EPTGMk]?B")
 
     @classmethod
