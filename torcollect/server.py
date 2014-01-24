@@ -67,19 +67,31 @@ class Server(object):
         return self.keyfile
 
     @classmethod
-    def load(cls, address):
+    def load(cls, address_or_id):
+        """ load a server by address or id. assume id, when the input is
+            an integer, assume it's an address when input is a string
+        """
         db = torcollect.database.Database()
         cur = db.cursor()
-        stmnt = "SELECT SRV_ID, SRV_NAME, LGI_AUTHTYPE, LGI_SSHPORT, \
-                 LGI_USER, LGI_PASSWORD, LGI_KEYFILE \
-                 FROM Server INNER JOIN Login \
-                   ON (LGI_SRV_ID = SRV_ID) \
-                 WHERE SRV_IP = %(address)s;"
+        if type(address_or_id) == str:
+            stmnt = "SELECT SRV_ID, SRV_NAME, LGI_AUTHTYPE, LGI_SSHPORT, \
+                     LGI_USER, LGI_PASSWORD, LGI_KEYFILE, SRV_IP \
+                     FROM Server INNER JOIN Login \
+                       ON (LGI_SRV_ID = SRV_ID) \
+                     WHERE SRV_IP = %(address)s;"
+        elif type(adress_or_id) == int:
+            stmnt = "SELECT SRV_ID, SRV_NAME, LGI_AUTHTYPE, LGI_SSHPORT, \
+                     LGI_USER, LGI_PASSWORD, LGI_KEYFILE, SRV_IP \
+                     FROM Server INNER JOIN Login \
+                       ON (LGI_SRV_ID = SRV_ID) \
+                     WHERE SRV_ID = %(id)d;"
+        else:
+            return # Invalid input
         cur.execute(stmnt, {"address": address})
         res = cur.fetchone()
         server = Server()
         server.id = res[0]
-        server.ip = address
+        server.ip = res[7]
         server.name = res[1]
         server.login_type = res[2]
         server.port = res[3]
