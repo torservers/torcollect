@@ -29,6 +29,7 @@ import datetime
 import torcollect.server
 import torcollect.collector
 import torcollect.web
+import torcollect.organization
 
 HELPTEXT = """
 Collect statistics about TOR-Relays
@@ -53,7 +54,7 @@ actions:
  organization   --  edit information about organizations
  > add           -  add a new organization
    --name <name>
- > -d <name>     -  remove an organization
+ > -d <id>     -  remove an organization
  > list          -  list existing organizations
  > assign-bridge <bridge_identifier>:<address>
                  -  assign a bridge to an organization
@@ -123,6 +124,37 @@ def server_list():
     for server in server_list:
         print "Name: %s :: %s" % (server.get_name(), server.get_ip())
 
+def organization_add(parameters):
+    if "--name" not in parameters:
+        helptext()
+    else:
+        name = ""
+        try:
+            name = parameters[parameters.index("--name") + 1]
+        except IndexError:
+            helptext()
+        o = torcollect.organization.Organization()
+        o.set_name(name)
+        o.store()
+        print "Created Organization: %s"%name
+        
+
+def organization_delete(parameters):
+    if len(parameters) > 0 and parameters[0] is not None:
+        o = torcollect.organization.Organization.load(int(parameters[0]))
+        o.delete()
+        print "Deleted organization %s"%o.get_name()
+    else:
+        helptext()    
+
+def organization_list():
+    orglist = torcollect.organization.Organization.list()
+    for org in orglist:
+        print "Organization %(name)s (ID: %(id)d)"%org
+
+def organization_assign(parameters):
+    pass
+
 
 def run(argv):
     try:
@@ -148,7 +180,14 @@ def run(argv):
         else:
             helptext()
     elif action == "organization":
-        pass  # do of organizations editings
+        if subaction == "add":
+            organization_add(parameters)
+        elif subaction == "-d":
+            organization_delete(parameters)
+        elif subaction == "list":
+            organization_list()
+        elif subaction == "assign-bridge":
+            organizatoin_assign(parameters)
     elif action == "bridge":
         pass  # do bridge listings
     elif action == "generate":
