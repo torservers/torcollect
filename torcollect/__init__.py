@@ -54,10 +54,11 @@ actions:
  organization   --  edit information about organizations
  > add           -  add a new organization
    --name <name>
- > -d <id>     -  remove an organization
+ > -d <id>       -  remove an organization
  > list          -  list existing organizations
- > assign-bridge <bridge_identifier>:<address>
-                 -  assign a bridge to an organization
+ > assign-bridge -  assign a bridge to an organization
+   --bridge <bridge_id>
+   --organization <organization_id>
 
  bridge         --  show information about bridges
  > list          -  list collected bridges
@@ -153,7 +154,19 @@ def organization_list():
         print "Organization %(name)s (ID: %(id)d)"%org
 
 def organization_assign(parameters):
-    pass
+    if len(parameters) == 4:
+        try:
+            brg_id = int(parameters[parameters.index("--bridge") + 1])
+        except IndexError:
+            helptext()
+        try:
+            org_id = int(parameters[parameters.index("--organization") + 1])
+        except IndexError:
+            helptext()
+        o = torcollect.organization.Organization.load(org_id)
+        o.disclose_bridge(brg_id)
+    else:
+        helptext()
 
 
 def run(argv):
@@ -187,7 +200,7 @@ def run(argv):
         elif subaction == "list":
             organization_list()
         elif subaction == "assign-bridge":
-            organizatoin_assign(parameters)
+            organization_assign(parameters)
     elif action == "bridge":
         pass  # do bridge listings
     elif action == "generate":

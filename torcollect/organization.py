@@ -92,3 +92,15 @@ class Organization(object):
     def get_bridges(self):
     	""" returns bridges that have only been disclosed to this organization"""
         pass
+
+    def disclose_bridge(self, bridge):
+        """ Discloses a bridge to this organization """
+        if type(bridge) != int:
+            bridge = bridge.get_id()
+        db = Database()
+        stmnt = "INSERT INTO DisclosureTo (DSC_BRG_ID, DSC_ORG_ID) \
+                    VALUES (%(brg_id)d, %(org_id)s);"
+        cur = db.cursor()
+        cur.execute(stmnt , {'brg_id' : bridge,
+                             'org_id' : self.id})
+        db.commit()
