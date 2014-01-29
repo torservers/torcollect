@@ -133,6 +133,14 @@ bridge_table = """
 
 RE_XML_COMMENT = re.compile(r"<!--.*?-->")
 
+class TorcollectStyle(Style):
+    def __init__(self):
+        Style.__init__(self)
+        self.background = 'transparent'
+        self.plot_background = 'transparent'
+        self.colors = ('#aaff00', '#550055')
+        self.foreground_dark = '#010101'
+
 def clean_graph(xml):
     xml = re.sub(RE_XML_COMMENT, "", xml)
     return xml.replace ("<?xml version='1.0' encoding='utf-8'?>","",1)
@@ -161,19 +169,13 @@ def generate_main_page():
     mainpage.close()
 
 def generate_worldmap(data):
-    style = Style()
-    style.background = 'transparent'
-    style.plot_background = 'transparent'
-    
-    wm = pygal.Worldmap(width=300, height=200, show_legend=False, margin=0, style=style)
+    wm = pygal.Worldmap(width=300, height=200, show_legend=False, margin=0, style=TorcollectStyle())
     wm.add('Tor Usage', data)
     return clean_graph(wm.render())
 
 def generate_country_sparkline(data):
-    style = Style()
-    style.background = 'transparent'
-    style.plot_background = 'transparent'
-    chart = pygal.StackedLine(fill=True, show_x_labels=False, show_y_labels=False, margin=0, style=style)
+    chart = pygal.StackedLine(fill=True, show_x_labels=False, 
+                              show_y_labels=False, margin=0, style=TorcollectStyle())
     chart.add('', data)
     return clean_graph(chart.render_sparkline(interpolate="cubic"))
 
@@ -248,7 +250,8 @@ def generate_bridge_sparkline(data):
     style = Style()
     style.background = 'transparent'
     style.plot_background = 'transparent'
-    chart = pygal.StackedLine(fill=True, show_x_labels=False, show_y_labels=False, margin=0, style=style)
+    chart = pygal.StackedLine(fill=True, show_x_labels=False, show_y_labels=False,
+                               margin=0, style=TorcollectStyle())
     chart.add('', data['sent'])
     chart.add('', data['received'])
     return clean_graph(chart.render_sparkline(interpolate="cubic"))
