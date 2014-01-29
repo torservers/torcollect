@@ -121,13 +121,17 @@ bridge_line = """
     <td> %(users)d </td>
 </tr>
 <tr>
-    <td colspan="3" style="border-top:none;">%(sparkline)s</td>
+    <td colspan="2" style="border-top:none;">%(sparkline)s</td>
+    <td>
+        <span style="font-size:10px; color:#505;">recv: %(received)d</span>
+        <span style="font-size:10px; color:#af0;">sent: %(sent)d</span><br>
+    </td>
 </tr>
 """
 
 bridge_table = """
 <div class="col-md-4">
-<h4>Users by Bridge</h4>
+<h4>Users and traffic by Bridge</h4>
 <table class="table">
 %(content)s
 </table>
@@ -269,11 +273,12 @@ def generate_bridge_sparkline(data):
 
 def generate_bridgereport(date):
     db = torcollect.database.Database()
-    stmnt_usage = "SELECT REP_BRG_ID, SUM(CRP_USERS) AS USAGE \
+    stmnt_usage = "SELECT REP_BRG_ID, SUM(CRP_USERS) AS USAGE, \
+                          REP_TRAFFIC_SENT, REP_TRAFFIC_RECEIVED \
              FROM CountryReport LEFT JOIN Report \
                 ON (REP_ID = CRP_REP_ID) \
              WHERE REP_DATE = %(date)s \
-             GROUP BY REP_BRG_ID \
+             GROUP BY REP_BRG_ID, REP_TRAFFIC_SENT, REP_TRAFFIC_RECEIVED \
              ORDER BY USAGE DESC;"
     stmnt_traffic = "SELECT REP_BRG_ID, REP_TRAFFIC_SENT, \
                         REP_TRAFFIC_RECEIVED \
@@ -296,6 +301,8 @@ def generate_bridgereport(date):
     bridge_lines = StringIO.StringIO()
     for dataset in cur.fetchall():
         line = bridge_line % {'users': dataset[1],
+                              'sent': dataset[2],
+                              'received': dataset[3],
                               'sparkline': generate_bridge_sparkline(traffic_data[dataset[0]])}
         bridge_lines.write(line)
 
