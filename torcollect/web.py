@@ -49,7 +49,7 @@ main_page = """
     <div class="col-md-12"><h1>Torservers.net Statistics</h1></div>
     </div>
     <div class="row tc_chart">
-        <div class="col-md-12 nopad" id="graphspace">
+        <div class="col-md-12 nopad" id="graphspace" style="display:none;">
             <svg width="1024" height="100" class="tc_graph" id="tc_graph">
                 <defs>
                     <linearGradient id="grad1" x1="0%%" y1="0%%" x2="0%%" y2="100%%">
@@ -58,6 +58,9 @@ main_page = """
                     </linearGradient>
                 </defs>
             </svg>
+        </div>
+        <div>
+            %(usage_graph)s
         </div>
     </div>
     <div class="row tc_table" id="reportcontent">
@@ -149,6 +152,11 @@ def escape(plain):
     html = plain.replace("<", "&lt;")
     return html.replace(">", "&gt;")
 
+def generate_main_graph(data):
+    chart = pygal.Line(width=900, height=100, fill=True, spacing=20,
+                       margin=10, style=TorcollectStyle())
+    chart.add('Users', data)
+    return clean_graph(chart.render())
 
 def generate_main_page():
     graphdata = []
@@ -161,9 +169,12 @@ def generate_main_page():
     cur = db.cursor()
     cur.execute(stmnt)
     count = 0
+    pygal_graph = []
     for dataset in cur.fetchall():
         graphdata.append({'d': dataset[1], 'u': dataset[0]})
-    page = main_page % {'graphdata': json.dumps(graphdata)}
+        pygal_graph.append(dataset[0])
+    page = main_page % {'graphdata': json.dumps(graphdata),
+                        'usage_graph': generate_main_graph(pygal_graph)}
     mainpage = open(REPORTPAGE, "w")
     mainpage.write(page)
     mainpage.close()
