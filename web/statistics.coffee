@@ -84,10 +84,6 @@ get_points = (data, area=true) ->
         points.push graph_width()+","+graph_height()
     return points.join " "
 
-# returns the nth key of a dict
-# TODO: Check if really needed
-get_nth_key = (n) ->
-    1
 # Closure around load_day_report
 generate_reportlink = (day) ->
     return ->
@@ -142,20 +138,6 @@ load_day_report = (day) ->
             success_resultcodes = [200, 304]
             if req.status in success_resultcodes
                 document.getElementById('reportcontent').innerHTML = req.responseText
-                # Do a second request to get supportive json data for minigraphs
-                # This also makes sure that the tables are rendered by the time
-                # the minigraphs are being added
-                json_req = new XMLHttpRequest()
-                json_req.addEventListener 'readystatechange', ->
-                    if json_req.readyState is 4
-                        success_resultcodes = [200, 304]
-                        if json_req.status in success_resultcodes
-                            incoming_data = JSON.parse(json_req.responseText)
-                            m_generate_traffic_graphs incoming_data["traffic_history"]
-                url = '/reports/'+req.day+'.json'
-                json_req.open 'GET', url, true
-                json_req.send null
-                                
 
     url = '/reports/'+day+'.html'
     req.day = day
@@ -170,139 +152,4 @@ initialize_graph(data)
 load_most_recent(data)
 
 
-###################################
-# Minigraphs
-###################################
 
-# Returns the graphs width. It is being read from the element that
-# the graph will be displayed in. This element is passed via it's dom-ID
-m_graph_width = (id) ->
-    return document.getElementById(id).offsetWidth
-
-# Returns the graphs height. It is being read from the element that
-# the graph will be displayed in. The element is passed via it's dom-Id
-m_graph_height = (id) ->
-    return document.getElementById(id).offsetHeight - 1
-
-# Returns the space between two points on the x-axis in a graph.
-# The x-point-distance is being calculated based on how many data-objects
-# are in the data array that is to be displayed
-m_x_space_between_points = (id, data) ->
-    return m_graph_width(id) / (data.length - 1)
-
-# Returns the space (in px) per step on the scale of the data contained in the list.
-# attributes should contain a set of attributes found in the data-objects that are to
-# be taken into account.
-# E.G. when you have a list that contains objects that has an attribute 's' that you want
-# to display, you pass ('s') in attributes. if you want two or more attributes that should
-# be displayed in the graph together, you can do so, too
-m_y_space_between_points = (id, data, attributes) ->
-    return (m_graph_height(id) - get_dot_radius()*2) / maxim get_attribute_array data, attributes
-
-# Returns the X-position of a point
-m_get_x_position = (id, data, count) ->
-    return Math.round count * m_x_space_between_points(id, data)
-
-# Returns the y position of a value
-m_get_y_position = (id, data, attributes, value) ->
-    value ?= 0
-    return Math.round m_graph_height(id) - value * m_y_space_between_points(id, data, attributes) + get_dot_radius()
-
-m_get_point = (id, data, abs_attributes, value, count) ->
-    return m_get_x_position(id, data, count)+","+m_get_y_position(id, data, abs_attributes, value)
-
-m_get_points = (id, data, attribute, abs_attributes, area=true) ->
-    points = (m_get_point id, data, abs_attributes, get_attribute_array(data, attribute)[i], i for i in [0..data.length-1])
-    if area
-        points.unshift 0+","+m_graph_height(id)
-        points.push m_graph_width(id)+","+m_graph_height(id)
-    return points.join " "
-
-m_generate_received_polygon = (id, traffic_data) ->
-    svg_ns = "http://www.w3.org/2000/svg"
-    polygon = document.createElementNS svg_ns, 'polygon'
-    polygon.setAttribute 'points', m_get_points(id, traffic_data, ['s','r'], ['r','s'])
-    polygon.setAttribute 'fill', 'url(#grad3)'
-    return polygon
-
-m_generate_sent_polygon = (id, traffic_data) ->
-    svg_ns = "http://www.w3.org/2000/svg"
-    polygon = document.createElementNS svg_ns, 'polygon'
-    polygon.setAttribute 'points', m_get_points(id, traffic_data, 's', ['r','s'])
-    polygon.setAttribute 'fill', "url(#grad2)"
-    return polygon
-
-m_get_left = (element) ->
-    if element.tagName == "DIV"
-        return element.offsetLeft - 2
-    else
-        return m_get_left(element.parentNode) + element.offsetLeft
-
-m_get_top = (element) ->
-    #alert element.offsetTop+" from "+element
-    if element.tagName == "DIV"
-        return element.offsetTop - 2
-    else
-        return m_get_top(element.parentNode) + element.offsetTop
-
-m_generate_traffic_gradient = ->
-    svg_ns = "http://www.w3.org/2000/svg"
-    defs = document.createElementNS svg_ns, 'defs'
-    grad = document.createElementNS svg_ns, 'linearGradient'
-    grad.setAttribute 'id', 'grad3'
-    grad.setAttribute 'y2', '100%'
-    grad.setAttribute 'x2', '0%'
-    grad.setAttribute 'y1', '0%'
-    grad.setAttribute 'x1', '0%'
-    s1 = document.createElementNS svg_ns, 'stop'
-    s1.style.stopColor = '#00f'
-    s1.style.stopOpacity = "0.25"
-    s1.setAttribute 'offset', '0%'
-    s2 = document.createElementNS svg_ns, 'stop'
-    s2.style.stopColor = '#00f'
-    s2.style.stopOpacity = "0.1"
-    s2.setAttribute 'offset', '100%'
-    grad.appendChild s1
-    grad.appendChild s2
-    defs.appendChild grad
-    grad2 = document.createElementNS svg_ns, 'linearGradient'
-    grad2.setAttribute 'id', 'grad2'
-    grad2.setAttribute 'y2', '100%'
-    grad2.setAttribute 'x2', '0%'
-    grad2.setAttribute 'y1', '0%'
-    grad2.setAttribute 'x1', '0%'
-    s3 = document.createElementNS svg_ns, 'stop'
-    s3.style.stopColor = '#f00'
-    s3.style.stopOpacity = "0.25"
-    s3.setAttribute 'offset', '0%'
-    s4 = document.createElementNS svg_ns, 'stop'
-    s4.style.stopColor = 'f00'
-    s4.style.stopOpacity = "0.1"
-    s4.setAttribute 'offset', '100%'
-    grad2.appendChild s3
-    grad2.appendChild s4
-    defs.appendChild grad2
-    
-    return defs
-
-# generate the trafficgraph for a tablerow
-m_generate_traffic_graph = (id, brg_traffic_data) ->
-    svg_ns = "http://www.w3.org/2000/svg"
-    svg = document.createElementNS svg_ns, 'svg'
-    tr = document.getElementById id
-    svg.setAttribute 'width', tr.offsetWidth - 1
-    svg.setAttribute 'height', tr.offsetHeight - 1
-    traffic_data = brg_traffic_data[id.split("_")[1].toString()]
-    svg.appendChild m_generate_traffic_gradient()
-    svg.appendChild m_generate_received_polygon id, traffic_data
-    svg.appendChild m_generate_sent_polygon id, traffic_data
-    document.body.appendChild svg
-    svg.style.display = "block"
-    svg.style.position = "absolute"
-    svg.style.top = m_get_top(tr)+"px"
-    svg.style.left = m_get_left(tr)+"px"
-    svg.style.zIndex = 0
-
-m_generate_traffic_graphs = (brg_traffic_data) ->
-    (m_generate_traffic_graph "brgl_"+id, brg_traffic_data for id in keys brg_traffic_data)
-    

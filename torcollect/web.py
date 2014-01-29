@@ -25,7 +25,9 @@ import datetime
 import torcollect.database
 import StringIO
 import json
-import random
+import re
+import pygal
+from pygal.style import Style
 
 from torcollect.paths import REPORTPAGE, REPORTS
 
@@ -72,16 +74,20 @@ report_header = """
 """
 
 country_line = """
-<tr id="crpl_%(code)s">
+<tr>
     <td><img src="flags/%(code)s.png" alt="%(code)s"></td>
     <td> %(name)s </td>
     <td> %(users)d </td>
+</tr>
+<tr>
+    <td colspan="3" style="border-top:none;">%(sparkline)s</td>
 </tr>
 """
 
 country_table = """
 <div class="col-md-4">
 <h4>Country Statistics</h4>
+%(worldmap)s
 <table class="table">
 %(content)s
 </table>
@@ -106,10 +112,13 @@ transport_table = """
 """
 
 bridge_line = """
-<tr id="brgl_%(id)d">
+<tr>
     <td><img src="bridge.png" alt="Bridge"></td>
     <td> Bridge </td>
     <td> %(users)d </td>
+</tr>
+<tr>
+    <td colspan="3" style="border-top:none;">%(sparkline)s</td>
 </tr>
 """
 
@@ -122,6 +131,11 @@ bridge_table = """
 </div>
 """
 
+RE_XML_COMMENT = re.compile(r"<!--.*?-->")
+
+def clean_graph(xml):
+    xml = re.sub(RE_XML_COMMENT, "", xml)
+    return xml.replace ("<?xml version='1.0' encoding='utf-8'?>","",1)
 
 def escape(plain):
     html = plain.replace("<", "&lt;")
@@ -146,6 +160,22 @@ def generate_main_page():
     mainpage.write(page)
     mainpage.close()
 
+def generate_worldmap(data):
+    style = Style()
+    style.background = 'transparent'
+    style.plot_background = 'transparent'
+    
+    wm = pygal.Worldmap(width=300, height=200, show_legend=False, margin=0, style=style)
+    wm.add('Tor Usage', data)
+    return clean_graph(wm.render())
+
+def generate_country_sparkline(data):
+    style = Style()
+    style.background = 'transparent'
+    style.plot_background = 'transparent'
+    chart = pygal.StackedLine(fill=True, show_x_labels=False, show_y_labels=False, margin=0, style=style)
+    chart.add('', data)
+    return clean_graph(chart.render_sparkline(interpolate="cubic"))
 
 def generate_countryreport(date):
     db = torcollect.database.Database()
@@ -166,24 +196,32 @@ def generate_countryreport(date):
             GROUP BY CCO_SHORT, CCO_LONG, REP_DATE \
             ORDER BY CCO_SHORT, REP_DATE ASC;"
     cur = db.cursor()
-    cur.execute(stmnt, {'date': date.isoformat()})
-    country_lines = StringIO.StringIO()
-    for dataset in cur.fetchall():
-        line = country_line % {'code': dataset[0].lower(),
-                               'name': dataset[1],
-                               'users': dataset[2]}
-        country_lines.write(line)
-    cur.execute(stmnt_history, {'date': date.isoformat()})
 
+    cur.execute(stmnt_history, {'date': date.isoformat()})
     country_history = {}
     for dataset in cur.fetchall():
         ccode = dataset[0].lower()
         if not country_history.has_key(ccode):
             country_history[ccode] = []
-        country_history[ccode].append({'c':int(dataset[1])})
-    return (country_table % {'date': date.isoformat(),
-                            'content': country_lines.getvalue()},
-            country_history)
+        country_history[ccode].append(dataset[1])
+
+    cur.execute(stmnt, {'date': date.isoformat()})
+    country_lines = StringIO.StringIO()
+    
+    worldmap_data = {}
+
+    for dataset in cur.fetchall():
+        ccode = dataset[0].lower()
+        line = country_line % {'code': ccode,
+                               'name': dataset[1],
+                               'users': dataset[2],
+                               'sparkline': generate_country_sparkline(country_history[ccode])}
+        worldmap_data[dataset[0].lower()] = dataset[2]
+        country_lines.write(line)
+
+    return country_table % {'date': date.isoformat(),
+                            'content': country_lines.getvalue(),
+                            'worldmap': generate_worldmap(worldmap_data)}
 
 
 def generate_transportreport(date):
@@ -206,6 +244,14 @@ def generate_transportreport(date):
     return transport_table % {'date': date.isoformat(),
                               'content': transport_lines.getvalue()}
 
+def generate_bridge_sparkline(data):
+    style = Style()
+    style.background = 'transparent'
+    style.plot_background = 'transparent'
+    chart = pygal.StackedLine(fill=True, show_x_labels=False, show_y_labels=False, margin=0, style=style)
+    chart.add('', data['sent'])
+    chart.add('', data['received'])
+    return clean_graph(chart.render_sparkline(interpolate="cubic"))
 
 def generate_bridgereport(date):
     db = torcollect.database.Database()
@@ -221,54 +267,39 @@ def generate_bridgereport(date):
                      WHERE REP_DATE > DATE %(date)s-7 \
                      ORDER BY REP_BRG_ID, REP_DATE ASC;"
     cur = db.cursor()
-    cur.execute(stmnt_usage, {'date': date.isoformat()})
-    bridge_lines = StringIO.StringIO()
 
-    randomized_ids = {}
 
-    for dataset in cur.fetchall():
-        random_id = 0
-        while random_id == 0 or random_id in randomized_ids.keys():
-            random_id = random.randint(0,1000000000)
-        line = bridge_line % {'users': dataset[1],
-                              'id': random_id}
-        randomized_ids[dataset[0]] = random_id
-        bridge_lines.write(line)
-    traffic_history = {}
+    traffic_data = {}
     cur.execute(stmnt_traffic, {'date': date.isoformat()})
     for dataset in cur.fetchall():
-        if not randomized_ids.has_key(dataset[0]):
-            continue # TODO: Check under which circumstances this happens
-                     #       Assumption: bridges that had no users wont appear in the
-                     #       Chart
-        if not traffic_history.has_key(randomized_ids[dataset[0]]):
-            traffic_history[randomized_ids[dataset[0]]] = []
-        traffic_history[randomized_ids[dataset[0]]].append({'s':dataset[1],
-                                                            'r':dataset[2]})
+        if not traffic_data.has_key(dataset[0]):
+            traffic_data[dataset[0]] = {'sent':[],'received':[]}
+        traffic_data[dataset[0]]['sent'].append(dataset[1])
+        traffic_data[dataset[0]]['received'].append(dataset[2])
+        
 
-    return (bridge_table % {'date': date.isoformat(),
-                           'content': bridge_lines.getvalue()},
-           traffic_history)
+    cur.execute(stmnt_usage, {'date': date.isoformat()})
+    bridge_lines = StringIO.StringIO()
+    for dataset in cur.fetchall():
+        line = bridge_line % {'users': dataset[1],
+                              'sparkline': generate_bridge_sparkline(traffic_data[dataset[0]])}
+        bridge_lines.write(line)
+
+
+    return bridge_table % {'date': date.isoformat(),
+                           'content': bridge_lines.getvalue()}
 
 
 def generate_report_for_day(date):
     content = report_header%{'date': date.isoformat()}
-    country_html, country_json = generate_countryreport(date)
-    bridge_html, bridge_json = generate_bridgereport(date)
+    country_html = generate_countryreport(date)
+    bridge_html = generate_bridgereport(date)
 
     content += country_html
     content += bridge_html
     content += generate_transportreport(date)
 
-    json_structure = {'traffic_history':bridge_json,
-                      'country_user_history':country_json,
-                      'transport_history':None}
-
     reportfile = open("%s%s%s" % (REPORTS, date.isoformat(), ".html"), "w")
     reportfile.write(content)
     reportfile.close()
-    
-    jsonfile = open("%s%s%s" % (REPORTS, date.isoformat(), ".json"), "w")
-    jsonfile.write(json.dumps(json_structure))
-    jsonfile.close()
 
