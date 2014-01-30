@@ -35,6 +35,19 @@ Setting up a torcollect server:
 * One should only be able to connect to it from localhost by now.
 * The name of the database should be "torcollect"
 * The password of the database should be "test" by now.
+
+* install python-pip (apt-get install python-pip)
+* install pygal via pip (pip install pygal)
+* make the following changes to the config.py in /usr/local/lib/python2.7/dist-packages/pygal/config.py:
+  substitute the adresses "http://kozea.github.com/pygal.js/javascripts/pygal-tooltips.js" and
+  "http://kozea.github.com/pygal.js/javascripts/svg.jquery.js" so that the files are searched on your
+  own webserver. For example "http://mytorcollect.server.tld/pygal-tooltips.js" and respectively
+  "http://mytorcollect.server.tld/svg.jquery.js". This prevents external services from knowing who
+  uses torcollect at which time and is thus necessary to support our users' privacy.
+* go to the documentroot of your webserver and wget
+  http://kozea.github.com/pygal.js/javascripts/pygal-tooltips.js
+  and http://kozea.github.com/pygal.js/javascripts/svg.jquery.js
+
 * You can now fiddle around with the new command *torcollect* that you should be
 able to execute in the console.
 * You'll find there documented the command torcollect server add. Use this command
