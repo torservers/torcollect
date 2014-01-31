@@ -159,15 +159,16 @@ def escape(plain):
 def generate_main_graph(data):
     chart = pygal.Line(width=900, height=100, fill=True, spacing=20,
                        margin=10, style=TorcollectStyle())
+    chart.title = "overall usage"
     chart.add('Users', data)
     return clean_graph(chart.render())
 
 def generate_main_page():
     graphdata = []
     db = torcollect.database.Database()
-    stmnt = "SELECT SUM(CRP_USERS), REP_DATE \
-            FROM Report INNER JOIN CountryReport \
-                ON (REP_ID = CRP_REP_ID) \
+    stmnt = "SELECT SUM(TRP_USERS), REP_DATE \
+            FROM Report INNER JOIN TransportReport \
+                ON (REP_ID = TRP_REP_ID) \
             GROUP BY (REP_DATE) \
             ORDER BY REP_DATE ASC LIMIT 365;"
     cur = db.cursor()
