@@ -22,15 +22,34 @@
 ############################################################
 
 import torcollect.paths
+import torcollect.database
 
 class Bridge(object):
     def __init__(self):
         self.ip = ""
         self.server = ""
+    
+    @classmethod
+    def list(cls, server=""):
+        db = torcollect.database.Database()
+        server = "%"+server+"%"
+        stmnt = "SELECT BRG_ID, SRV_NAME, BRG_NR \
+                 FROM Bridge INNER JOIN Server \
+                    ON (BRG_SRV_ID = SRV_ID) \
+                 WHERE SRV_NAME LIKE %(server)s;"
+        cur = db.cursor()
+        cur.execute(stmnt, {'server':server})
+        ret = []
+        for dataset in cur.fetchall():
+            ret.append({'id': dataset[0],
+                        'srv_name': dataset[1],
+                        'nr': dataset[2]})
+        return ret
+                         
 
     def setup_db(self):
         """ Create a new database for this bridge"""
-	pass
+    	pass
 
     def disclose_to(self, organization):
 	""" Disclose this bridge only to a specific organization """

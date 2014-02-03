@@ -30,6 +30,7 @@ import torcollect.server
 import torcollect.collector
 import torcollect.web
 import torcollect.organization
+import torcollect.bridge
 
 HELPTEXT = """
 Collect statistics about TOR-Relays
@@ -62,6 +63,7 @@ actions:
 
  bridge         --  show information about bridges
  > list          -  list collected bridges
+  [--server <name>]
 
  help           --  show this help message
 """ % sys.argv[0]
@@ -168,6 +170,17 @@ def organization_assign(parameters):
     else:
         helptext()
 
+def bridge_list(parameters):
+    srv_name = ""
+    if len(parameters) == 2:
+        try:
+            srv_name = parameters[parameters.index("--name") + 1]
+        except IndexError:
+            helptext()
+    bridgelist = torcollect.bridge.Bridge.list(server=srv_name)
+    for bridge in bridgelist:
+        print "Bridge %(nr)s on Server %(srv_name)s (ID: %(id)d)"%bridge
+
 
 def run(argv):
     try:
@@ -202,7 +215,8 @@ def run(argv):
         elif subaction == "assign-bridge":
             organization_assign(parameters)
     elif action == "bridge":
-        pass  # do bridge listings
+        if subaction == "list":
+            bridge_list(parameters)  # do bridge listings
     elif action == "generate":
         torcollect.web.generate_main_page()
         torcollect.web.generate_report_for_day(datetime.date.today())
