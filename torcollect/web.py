@@ -157,8 +157,8 @@ def escape(plain):
     return html.replace(">", "&gt;")
 
 def generate_main_graph(data):
-    chart = pygal.Line(width=900, height=100, fill=True, spacing=20,
-                       margin=10, style=TorcollectStyle())
+    chart = pygal.Line(width=900, height=200, fill=True, spacing=20,
+                       margin=10, style=TorcollectStyle(), include_x_axis=True)
     chart.title = "overall usage"
     chart.add('Users', data)
     return clean_graph(chart.render())
@@ -190,7 +190,7 @@ def generate_worldmap(data):
     return clean_graph(wm.render())
 
 def generate_country_sparkline(data):
-    chart = pygal.StackedLine(fill=True, show_x_labels=False, 
+    chart = pygal.StackedLine(fill=True, show_x_labels=False, include_x_axis=True,
                               show_y_labels=False, margin=0, style=TorcollectStyle())
     chart.add('', data)
     return clean_graph(chart.render_sparkline(interpolate="cubic"))
@@ -267,7 +267,7 @@ def generate_bridge_sparkline(data):
     style.background = 'transparent'
     style.plot_background = 'transparent'
     chart = pygal.StackedLine(fill=True, show_x_labels=False, show_y_labels=False,
-                               margin=0, style=TorcollectStyle())
+                               margin=0, style=TorcollectStyle(), include_x_axis=True)
     chart.add('', data['sent'])
     chart.add('', data['received'])
     return clean_graph(chart.render_sparkline(interpolate="cubic"))
