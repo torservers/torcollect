@@ -42,14 +42,17 @@ class MonthlyReport(object):
                     GROUP BY (REP_DATE) \
                     ORDER BY REP_DATE ASC;"
 
-    _CNMAP_STMNT = "SELECT CCO_SHORT, SUM(CRP_USERS) \
-                    FROM CountryReport INNER JOIN CountryCode \
-                        ON (CCO_ID = CRP_CCO_ID) \
-                    INNER JOIN Report \
-                        ON (REP_ID = CRP_REP_ID) \
-                    WHERE REP_DATE >= %(start_date)s AND REP_DATE <= %(end_date)s \
-                    GROUP BY CCO_SHORT \
-                    ORDER BY CCO_SHORT ASC;"
+    _CNMAP_STMNT = "SELECT TC.CCO_SHORT, COALESCE(TT.USAGE, 0) FROM \
+                        (SELECT CCO_SHORT, SUM(CRP_USERS) AS USAGE \
+                        FROM Countryreport INNER JOIN CountryCode \
+                            ON (CCO_ID = CRP_CCO_ID) \
+                        INNER JOIN Report \
+                            ON (REP_ID = CRP_REP_ID) \
+                        WHERE REP_DATE >= %(start_date)s AND REP_DATE <= %(end_date)s \
+                        GROUP BY CCO_SHORT ) AS TT \
+                    RIGHT JOIN CountryCode as TC \
+                        ON (TT.CCO_SHORT = TC.CCO_SHORT) \
+                    ORDER BY TC.CCO_SHORT ASC;"
 
     _CNHIS_STMNT = "SELECT CT.CCO_SHORT, RT.USAGE, CT.DATE FROM \
                         (SELECT CCO_SHORT, DT.DATE AS DATE FROM \
@@ -168,32 +171,35 @@ class MonthlyReport(object):
         html = MonthlyReport._HTML_FRAME%{'overall_usage_graph': overall_usage_graph,
                                           'overall_traffic_graph': overall_traffic_graph,
                                           'worldmap': worldmap,
-                                          'country_graphs': country_strings.getvalue()}
+                                          'country_graphs': country_strings.getvalue(),
+                                          'title': "Torserver - Monthly Report",
+                                          'start_date': self.start_date.isoformat(),
+                                          'end_date': self.end_date.isoformat()}
         return html
 
     def generate_overall_usage_graph(self, usagedata):
         g = pygal.Line(fill=True)
         g.add('Usage',usagedata)
         g.title = "Overall Usage"
-        return g.render()
+        return torcollect.graphs.clean_graph(g.render())
     
     def generate_overall_traffic_graph(self, traffic_sent, traffic_received):
-        g = pygal.Line(fill=True)
-        g.add('Sent', traffic_sent)
-        g.add('Received', traffic_received)
+        g = pygal.StackedLine(fill=True)
+        g.add('Sent', [int(x or 0) for x in traffic_sent])
+        g.add('Received', [int(x or 0) for x in traffic_received])
         g.title = "Overall Traffic"
-        return g.render()
+        return torcollect.graphs.clean_graph(g.render())
     
     def generate_worldmap(self, worldmap_data):
         g = pygal.Worldmap()
         g.add('', worldmap_data)
         g.title = "Distribution by country"
-        return g.render()
+        return torcollect.graphs.clean_graph(g.render())
 
     def generate_country_graph(self, usage_data):
         g = pygal.Line(fill=True)
         g.add('Usage', usage_data)
-        return g.render()            
+        return torcollect.graphs.clean_graph(g.render())           
 
     def check_validity(self):
         """ Check if there is all data needed to generate the report """
