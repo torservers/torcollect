@@ -31,6 +31,7 @@ import torcollect.collector
 import torcollect.web
 import torcollect.organization
 import torcollect.bridge
+import torcollect.report_generator
 
 HELPTEXT = """
 Collect statistics about TOR-Relays
@@ -181,6 +182,34 @@ def bridge_list(parameters):
     for bridge in bridgelist:
         print "Bridge %(nr)s on Server %(srv_name)s (ID: %(id)d)"%bridge
 
+def generate_monthly(parameters):
+    month = None
+    year = datetime.datetime.now().year
+    organization = ""
+    try:
+        month = int(parameters[parameters.index("--month") + 1])
+    except IndexError:
+        helptext()
+    except ValueError:
+        helptext()
+
+    try:
+        year = int(parameters[parameters.index("--year") +1])
+    except IndexError:
+        helptext()
+    except ValueError:
+        pass
+
+    try:
+        organzation = parameters[parameters.index("--organization") +1]
+    except IndexError:
+        helptext()
+    except ValueError:
+        pass
+    
+    report = torcollect.report_generator.MonthlyReport(year=year, month=month)
+    rendering = report.render()
+    print rendering
 
 def run(argv):
     try:
@@ -218,7 +247,10 @@ def run(argv):
         if subaction == "list":
             bridge_list(parameters)  # do bridge listings
     elif action == "generate":
-        torcollect.web.generate_main_page()
-        torcollect.web.generate_report_for_day(datetime.date.today())
+        if subaction == "":
+            torcollect.web.generate_main_page()
+            torcollect.web.generate_report_for_day(datetime.date.today())
+        elif subaction == "monthly":
+            generate_monthly(parameters)
     elif action == "help":
         helptext()

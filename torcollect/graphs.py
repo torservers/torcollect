@@ -21,6 +21,9 @@
 # If not, see http://www.gnu.org/licenses/.
 ###########################################################
 
+import re
+from pygal.style import Style
+
 RE_XML_COMMENT = re.compile(r"<!--.*?-->")
 
 class TorcollectStyle(Style):
