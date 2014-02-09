@@ -30,17 +30,32 @@ import StringIO
 class MonthlyReport(object):
     """ Generates a Monthly report of the bridge-usage in HTML-format
     """
-    _USAGE_STMNT = "SELECT SUM(TRP_USERS) FROM Report INNER JOIN TransportReport \
-                        ON (REP_ID = TRP_REP_ID) \
-                    WHERE REP_DATE >= %(start_date)s AND REP_DATE <= %(end_date)s \
-                    GROUP BY (REP_DATE) \
-                    ORDER BY REP_DATE ASC;"
+    _USAGE_STMNT = "SELECT COALESCE(TT.USAGE, 0) FROM \
+                        (SELECT SUM(TRP_USERS) AS USAGE, REP_DATE \
+                         FROM Report INNER JOIN TransportReport \
+                            ON (REP_ID = TRP_REP_ID) \
+                         WHERE REP_DATE >= %(start_date)s AND REP_DATE <= %(end_date)s \
+                         GROUP BY REP_DATE) AS TT\
+                    RIGHT JOIN \
+                        (SELECT CURRENT_DATE + i AS DATE FROM GENERATE_SERIES( \
+                            DATE %(start_date)s - CURRENT_DATE, \
+                            DATE %(end_date)s - CURRENT_DATE) i) AS DT \
+                    ON (DT.DATE = TT.REP_DATE) \
+                    ORDER BY DT.DATE;"
 
-    _TRFFC_STMNT = "SELECT SUM(REP_TRAFFIC_RECEIVED), SUM(REP_TRAFFIC_SENT) \
-                    FROM Report \
-                    WHERE REP_DATE >= %(start_date)s AND REP_DATE <= %(end_date)s \
-                    GROUP BY (REP_DATE) \
-                    ORDER BY REP_DATE ASC;"
+    _TRFFC_STMNT = "SELECT COALESCE(TT.RECEIVED, 0), COALESCE(TT.SENT, 0) FROM \
+                        (SELECT SUM(REP_TRAFFIC_RECEIVED) AS RECEIVED, \
+                                SUM(REP_TRAFFIC_SENT) AS SENT, \
+                                REP_DATE \
+                         FROM Report \
+                         WHERE REP_DATE >= %(start_date)s AND REP_DATE <= %(end_date)s \
+                         GROUP BY REP_DATE) AS TT \
+                    RIGHT JOIN \
+                        (SELECT CURRENT_DATE + i AS DATE FROM GENERATE_SERIES( \
+                            DATE %(start_date)s - CURRENT_DATE, \
+                            DATE %(end_date)s - CURRENT_DATE) i) AS DT \
+                    ON (DT.DATE = TT.REP_DATE) \
+                    ORDER BY DT.DATE;"
 
     _CNMAP_STMNT = "SELECT TC.CCO_SHORT, COALESCE(TT.USAGE, 0) FROM \
                         (SELECT CCO_SHORT, SUM(CRP_USERS) AS USAGE \
@@ -78,6 +93,7 @@ class MonthlyReport(object):
     <head>
         <title>%(title)s</title>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <link rel="stylesheet" href="/torcollect.css" type="text/css">
     </head>
     <body>
         <h1> %(title)s </title>
@@ -86,19 +102,9 @@ class MonthlyReport(object):
         %(overall_traffic_graph)s
         <h2> Distribution by Country </h2>
         %(worldmap)s
-        <table>
-        %(country_graphs)s
-        </table>
+        %(country_graph)s
     </body>
     </html>
-    """
-
-    _HTML_COUNTRYLINE = """
-    <tr>
-        <td><img src="flags/%(ccode)s.png"></td>
-        <td>%(graph)s</td>
-        <td>%(usage)d</td>
-    </tr>
     """
 
     def __init__(self, year=None, month=None):
@@ -161,30 +167,26 @@ class MonthlyReport(object):
         overall_traffic_graph = self.generate_overall_traffic_graph(self.traffic_sent,
                                                                self.traffic_received)
         worldmap = self.generate_worldmap(self.country_overall_data)
-        country_strings = StringIO.StringIO()
-        for country, data in self.country_usage_data.items():
-            graph = self.generate_country_graph(data)
-            country_strings.write(
-                    MonthlyReport._HTML_COUNTRYLINE%{'ccode':country,
-                                                     'graph':graph,
-                                                     'usage':self.country_overall_data[country]})
+        country_history_graph = self.generate_country_graph(self.country_usage_data)
         html = MonthlyReport._HTML_FRAME%{'overall_usage_graph': overall_usage_graph,
                                           'overall_traffic_graph': overall_traffic_graph,
                                           'worldmap': worldmap,
-                                          'country_graphs': country_strings.getvalue(),
+                                          'country_graph': country_history_graph,
                                           'title': "Torserver - Monthly Report",
                                           'start_date': self.start_date.isoformat(),
                                           'end_date': self.end_date.isoformat()}
         return html
 
     def generate_overall_usage_graph(self, usagedata):
-        g = pygal.Line(fill=True)
+        g = pygal.Line(fill=True, height=400)
         g.add('Usage',usagedata)
+        g.x_labels = map(str, range(1,len(usagedata)+1)) 
         g.title = "Overall Usage"
         return torcollect.graphs.clean_graph(g.render())
     
     def generate_overall_traffic_graph(self, traffic_sent, traffic_received):
-        g = pygal.StackedLine(fill=True)
+        g = pygal.StackedLine(fill=True, height=400)
+        g.x_labels = map(str, range(1,len(traffic_sent)+1))
         g.add('Sent', [int(x or 0) for x in traffic_sent])
         g.add('Received', [int(x or 0) for x in traffic_received])
         g.title = "Overall Traffic"
@@ -197,8 +199,10 @@ class MonthlyReport(object):
         return torcollect.graphs.clean_graph(g.render())
 
     def generate_country_graph(self, usage_data):
-        g = pygal.Line(fill=True)
-        g.add('Usage', usage_data)
+        g = pygal.StackedLine(fill=True)
+        g.x_labels = map(str, range(1,len(usage_data['us'])+1))
+        for ccode, data in usage_data.items():
+            g.add(ccode, data)
         return torcollect.graphs.clean_graph(g.render())           
 
     def check_validity(self):
