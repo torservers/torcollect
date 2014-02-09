@@ -93,12 +93,21 @@ class MonthlyReport(object):
     <head>
         <title>%(title)s</title>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <link rel="stylesheet" href="/bootstrap/css/bootstrap.min.css" type="text/css">
+        <link rel="stylesheet" href="/bootstrap/css/bootstrap-theme.min.css" type="text/css">
         <link rel="stylesheet" href="/torcollect.css" type="text/css">
     </head>
     <body>
-        <h1> %(title)s </title>
+        <h1 style="text-align:center;"> %(title)s </h1>
+        <br>
         <p> This report is concering data from %(start_date)s to %(end_date)s </p>
+        <h2> Usage Information </h2>
+        <p> The numbers displayed to you in this graph represent the number of TOR
+        circuits that have been set up through the monitored bridges. Be aware that to 
+        minimize the risk of de-anonymization, TOR rounds the actual figure up to 
+        multiples of 8.
         %(overall_usage_graph)s
+        <h2> Traffic Information </h2>
         %(overall_traffic_graph)s
         <h2> Distribution by Country </h2>
         %(worldmap)s
