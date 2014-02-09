@@ -42,6 +42,12 @@ actions:
 
  collect        --  collect data ( to be called every 24h )
 
+ generate       --  generate reports (to be called every 24h )
+ > monthly       -  generate a monthly report
+   --year <year [YYYY]>
+   --month <month of year [1-12]>
+   [--organization <organization-id>]
+
  server         --  edit information about servers
  › add           -  add a new server
    --name <name>
@@ -185,7 +191,7 @@ def bridge_list(parameters):
 def generate_monthly(parameters):
     month = None
     year = datetime.datetime.now().year
-    organization = ""
+    organization = None
     try:
         month = int(parameters[parameters.index("--month") + 1])
     except IndexError:
@@ -201,13 +207,17 @@ def generate_monthly(parameters):
         pass
 
     try:
-        organzation = parameters[parameters.index("--organization") +1]
+        organization = int(parameters[parameters.index("--organization") +1])
     except IndexError:
         helptext()
     except ValueError:
         pass
     
-    report = torcollect.report_generator.MonthlyReport(year=year, month=month)
+    if organization is None:
+        report = torcollect.report_generator.MonthlyReport(year=year, month=month)
+    else:
+        org = torcollect.organization.Organization.load(organization)
+        report = torcollect.report_generator.MonthlyOrganizationReport(org, year=year, month=month)
     rendering = report.render()
     print rendering
 

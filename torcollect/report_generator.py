@@ -259,7 +259,7 @@ class MonthlyOrganizationReport(MonthlyReport):
                         INNER JOIN Report \
                             ON (REP_ID = CRP_REP_ID) \
                         INNER JOIN Bridge \
-                            ON (BRG_ID = BRG_REP_ID) \
+                            ON (BRG_ID = REP_BRG_ID) \
                         INNER JOIN DisclosureTo \
                             ON (BRG_ID = DSC_BRG_ID) \
                         WHERE REP_DATE >= %(start_date)s AND REP_DATE <= %(end_date)s \
@@ -318,26 +318,28 @@ class MonthlyOrganizationReport(MonthlyReport):
         db = torcollect.database.Database()
         cur = db.cursor()
 
-        cur.execute(MonthlyReport._USAGE_STMNT, {'start_date': self.start_date.isoformat(),
+        MOR = MonthlyOrganizationReport
+
+        cur.execute(MOR._USAGE_STMNT, {'start_date': self.start_date.isoformat(),
                                    'end_date'  : self.end_date.isoformat(),
                                    'org_id'    : self.organization.get_id()})
         for dataset in cur.fetchall():
             self.usage_data.append(dataset[0])
         
-        cur.execute(MonthlyReport._TRFFC_STMNT, {'start_date': self.start_date.isoformat(),
+        cur.execute(MOR._TRFFC_STMNT, {'start_date': self.start_date.isoformat(),
                                    'end_date'  : self.end_date.isoformat(),
                                    'org_id'    : self.organization.get_id()})
         for dataset in cur.fetchall():
             self.traffic_sent.append(dataset[1])
             self.traffic_received.append(dataset[0])
 
-        cur.execute(MonthlyReport._CNMAP_STMNT, {'start_date': self.start_date.isoformat(),
+        cur.execute(MOR._CNMAP_STMNT, {'start_date': self.start_date.isoformat(),
                                    'end_date'  : self.end_date.isoformat(),
                                    'org_id'    : self.organization.get_id()})
         for dataset in cur.fetchall():
             self.country_overall_data[dataset[0].lower()] = dataset[1]
         
-        cur.execute(MonthlyReport._CNHIS_STMNT, {'start_date': self.start_date.isoformat(),
+        cur.execute(MOR._CNHIS_STMNT, {'start_date': self.start_date.isoformat(),
                                    'end_date'  : self.end_date.isoformat(),
                                    'org_id'    : self.organization.get_id()})
         for dataset in cur.fetchall():
