@@ -82,9 +82,6 @@ country_line = """
     <td> %(name)s </td>
     <td> %(users)d </td>
 </tr>
-<tr>
-    <td colspan="3" style="border-top:none;">%(sparkline)s</td>
-</tr>
 """
 
 country_table = """
@@ -121,8 +118,7 @@ bridge_line = """
     <td> %(users)d </td>
 </tr>
 <tr>
-    <td colspan="2" style="border-top:none;">%(sparkline)s</td>
-    <td>
+    <td colspan="3">
         <span style="font-size:10px; color:#505;">recv: %(received)d</span>
         <span style="font-size:10px; color:#af0;">sent: %(sent)d</span><br>
     </td>
@@ -250,8 +246,7 @@ def generate_countryreport(date):
         ccode = dataset[0].lower()
         line = country_line % {'code': ccode,
                                'name': dataset[1],
-                               'users': dataset[2],
-                               'sparkline': generate_country_sparkline(country_history[ccode])}
+                               'users': dataset[2]}
         worldmap_data[dataset[0].lower()] = dataset[2]
         country_lines.write(line)
 
@@ -333,8 +328,7 @@ def generate_bridgereport(date):
     for dataset in cur.fetchall():
         line = bridge_line % {'users': dataset[1],
                               'sent': dataset[2],
-                              'received': dataset[3],
-                              'sparkline': generate_bridge_sparkline(traffic_data[dataset[0]])}
+                              'received': dataset[3]}
         bridge_lines.write(line)
 
 
