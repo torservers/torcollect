@@ -210,3 +210,139 @@ class MonthlyReport(object):
         if self.end_date > datetime.datetime.now():
             difference = (self.end_date - datetime.datetime.now()).days
             raise Exception("This month is not finished yet. Try again in %d days"%difference)
+
+class MonthlyOrganizationReport(MonthlyReport):
+    """ This class modifies the behaviour of MonthlyReport to generate
+        reports that only concern bridges that have only been disclosed to
+        a specific organization
+    """
+    _USAGE_STMNT = "SELECT COALESCE(TT.USAGE, 0) FROM \
+                        (SELECT SUM(TRP_USERS) AS USAGE, REP_DATE \
+                         FROM Report INNER JOIN TransportReport \
+                            ON (REP_ID = TRP_REP_ID) \
+                         INNER JOIN Bridge \
+                            ON (BRG_ID = REP_BRG_ID) \
+                         INNER JOIN DisclosureTo \
+                            ON (BRG_ID = DSC_BRG_ID) \
+                         WHERE REP_DATE >= %(start_date)s AND REP_DATE <= %(end_date)s \
+                            AND DSC_ORG_ID = %(org_id)d \
+                         GROUP BY REP_DATE) AS TT\
+                    RIGHT JOIN \
+                        (SELECT CURRENT_DATE + i AS DATE FROM GENERATE_SERIES( \
+                            DATE %(start_date)s - CURRENT_DATE, \
+                            DATE %(end_date)s - CURRENT_DATE) i) AS DT \
+                    ON (DT.DATE = TT.REP_DATE) \
+                    ORDER BY DT.DATE;"
+
+    _TRFFC_STMNT = "SELECT COALESCE(TT.RECEIVED, 0), COALESCE(TT.SENT, 0) FROM \
+                        (SELECT SUM(REP_TRAFFIC_RECEIVED) AS RECEIVED, \
+                                SUM(REP_TRAFFIC_SENT) AS SENT, \
+                                REP_DATE \
+                         FROM Report INNER JOIN Bridge \
+                            ON (BRG_ID = REP_BRG_ID) \
+                         INNER JOIN DisclosureTo \
+                            ON (BRG_ID = DSC_BRG_ID) \
+                         WHERE REP_DATE >= %(start_date)s AND REP_DATE <= %(end_date)s \
+                            AND DSC_ORG_ID = %(org_id)d \
+                         GROUP BY REP_DATE) AS TT \
+                    RIGHT JOIN \
+                        (SELECT CURRENT_DATE + i AS DATE FROM GENERATE_SERIES( \
+                            DATE %(start_date)s - CURRENT_DATE, \
+                            DATE %(end_date)s - CURRENT_DATE) i) AS DT \
+                    ON (DT.DATE = TT.REP_DATE) \
+                    ORDER BY DT.DATE;"
+
+    _CNMAP_STMNT = "SELECT TC.CCO_SHORT, COALESCE(TT.USAGE, 0) FROM \
+                        (SELECT CCO_SHORT, SUM(CRP_USERS) AS USAGE \
+                        FROM Countryreport INNER JOIN CountryCode \
+                            ON (CCO_ID = CRP_CCO_ID) \
+                        INNER JOIN Report \
+                            ON (REP_ID = CRP_REP_ID) \
+                        INNER JOIN Bridge \
+                            ON (BRG_ID = BRG_REP_ID) \
+                        INNER JOIN DisclosureTo \
+                            ON (BRG_ID = DSC_BRG_ID) \
+                        WHERE REP_DATE >= %(start_date)s AND REP_DATE <= %(end_date)s \
+                            AND DSC_ORG_ID = %(org_id)d \
+                        GROUP BY CCO_SHORT ) AS TT \
+                    RIGHT JOIN CountryCode as TC \
+                        ON (TT.CCO_SHORT = TC.CCO_SHORT) \
+                    ORDER BY TC.CCO_SHORT ASC;"
+
+    _CNHIS_STMNT = "SELECT CT.CCO_SHORT, RT.USAGE, CT.DATE FROM \
+                        (SELECT CCO_SHORT, DT.DATE AS DATE FROM \
+                            (SELECT CURRENT_DATE + i AS DATE FROM \
+                                GENERATE_SERIES(DATE %(start_date)s - CURRENT_DATE, \
+                                                DATE %(end_date)s - CURRENT_DATE) i) \
+                            AS DT \
+                            CROSS JOIN CountryCode) AS CT \
+                        LEFT JOIN \
+                        (SELECT CCO_SHORT, SUM(CRP_USERS) AS USAGE, REP_DATE  \
+                         FROM CountryReport INNER JOIN CountryCode \
+                            ON (CCO_ID = CRP_CCO_ID)  \
+                        INNER JOIN Report \
+                            ON (REP_ID = CRP_REP_ID) \
+                        INNER JOIN Bridge \
+                            ON (BRG_ID = REP_BRG_ID) \
+                        INNER JOIN DisclosureTo \
+                            ON (BRG_ID = DSC_BRG_ID) \
+                        WHERE REP_DATE >= %(start_date)s  AND REP_DATE <= %(end_date)s \
+                            AND DSC_ORG_ID = %(org_id)d \
+                        GROUP BY CCO_SHORT, REP_DATE \
+                        ORDER BY CCO_SHORT, REP_DATE ASC) \
+                    AS RT ON (RT.CCO_SHORT = CT.CCO_SHORT AND RT.REP_DATE = CT.DATE);"
+
+    def __init__(self, organization, year=None, month=None):
+        self.organization = organization
+        MonthlyReport.__init__(self, year, month)
+
+    def render(self):
+        overall_usage_graph = self.generate_overall_usage_graph(self.usage_data)
+        overall_traffic_graph = self.generate_overall_traffic_graph(self.traffic_sent,
+                                                               self.traffic_received)
+        worldmap = self.generate_worldmap(self.country_overall_data)
+        country_history_graph = self.generate_country_graph(self.country_usage_data)
+        title = "Torserver - Monthly Report for %s" % self.organization.get_name()
+        html = MonthlyReport._HTML_FRAME%{'overall_usage_graph': overall_usage_graph,
+                                          'overall_traffic_graph': overall_traffic_graph,
+                                          'worldmap': worldmap,
+                                          'country_graph': country_history_graph,
+                                          'title': title,
+                                          'start_date': self.start_date.isoformat(),
+                                          'end_date': self.end_date.isoformat()}
+        return html
+ 
+    def gather_data(self):
+        """ Gathering the data needed to generate the report """
+        self.check_validity()
+        db = torcollect.database.Database()
+        cur = db.cursor()
+
+        cur.execute(MonthlyReport._USAGE_STMNT, {'start_date': self.start_date.isoformat(),
+                                   'end_date'  : self.end_date.isoformat(),
+                                   'org_id'    : self.organization.get_id()})
+        for dataset in cur.fetchall():
+            self.usage_data.append(dataset[0])
+        
+        cur.execute(MonthlyReport._TRFFC_STMNT, {'start_date': self.start_date.isoformat(),
+                                   'end_date'  : self.end_date.isoformat(),
+                                   'org_id'    : self.organization.get_id()})
+        for dataset in cur.fetchall():
+            self.traffic_sent.append(dataset[1])
+            self.traffic_received.append(dataset[0])
+
+        cur.execute(MonthlyReport._CNMAP_STMNT, {'start_date': self.start_date.isoformat(),
+                                   'end_date'  : self.end_date.isoformat(),
+                                   'org_id'    : self.organization.get_id()})
+        for dataset in cur.fetchall():
+            self.country_overall_data[dataset[0].lower()] = dataset[1]
+        
+        cur.execute(MonthlyReport._CNHIS_STMNT, {'start_date': self.start_date.isoformat(),
+                                   'end_date'  : self.end_date.isoformat(),
+                                   'org_id'    : self.organization.get_id()})
+        for dataset in cur.fetchall():
+            cc = dataset[0].lower()
+            if not self.country_usage_data.has_key(cc):
+                self.country_usage_data[cc] = []
+            self.country_usage_data[cc].append(dataset[1])
+
