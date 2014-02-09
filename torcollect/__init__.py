@@ -222,6 +222,7 @@ def generate_monthly(parameters):
     print rendering
 
 def run(argv):
+    subaction = ""
     try:
         action = argv[1]
     except IndexError:
