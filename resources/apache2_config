@@ -1,0 +1,13 @@
+<VirtualHost *:80>
+    DocumentRoot /var/www_torcollect
+    <Directory />
+        Options FollowSymLinks
+        AllowOverride None
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/torcollect/error.log
+
+    LogLevel warn
+    
+    CustomLog ${APACHE_LOG_DIR}/torcollect/access.log combined
+</VirtualHost>

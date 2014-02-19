@@ -1,0 +1,15 @@
+# add user torcollect
+sudo useradd torcollect
+
+# install pygal
+sudo pip install python-pygal
+
+# get js dependencies
+mkdir -p /var/www_torcollect
+curl http://kozea.github.com/pygal.js/javascripts/pygal-tooltips.js > /var/www_torcollect/pygal-tooltips.js
+curl http://kozea.github.com/pygal.js/javascripts/svg.jquery.js > /var/www_torcollect/svg.jquery.js
+
+# restart apache2
+a2ensite torcollect
+sudo /etc/init.d/apache2 reload
+
