@@ -26,25 +26,25 @@ Making a torserver ready for use with torcollect:
 Setting up a torcollect server:
 -------------------------------
 
-* Create a user torcollect on the machine.
-* Make sure the dependencies are installed (paramiko, pgdb).
-* Move the folder torcollect to /usr/local/lib/python2.7/dist-packages/
-* Move the file bin/torcollect to /usr/local/bin/
-* Chmod /usr/local/bin/torcollect to 755
+* [x] Create a user torcollect on the machine.
+* [x] Make sure the dependencies are installed (paramiko, pgdb).
+* [x] Move the folder torcollect to /usr/local/lib/python2.7/dist-packages/
+* [x] Move the file bin/torcollect to /usr/local/bin/
+* [x] Chmod /usr/local/bin/torcollect to 755
 * Set up a postgres database for the user torcollect using *database.sql*.
 * One should only be able to connect to it from localhost by now.
 * The name of the database should be "torcollect"
 * The password of the database should be "test" by now.
 
-* install python-pip (apt-get install python-pip)
-* install pygal via pip (pip install pygal)
+* [x] install python-pip (apt-get install python-pip)
+* [x] install pygal via pip (pip install pygal)
 * make the following changes to the config.py in /usr/local/lib/python2.7/dist-packages/pygal/config.py:
   substitute the adresses "http://kozea.github.com/pygal.js/javascripts/pygal-tooltips.js" and
   "http://kozea.github.com/pygal.js/javascripts/svg.jquery.js" so that the files are searched on your
   own webserver. For example "http://mytorcollect.server.tld/pygal-tooltips.js" and respectively
   "http://mytorcollect.server.tld/svg.jquery.js". This prevents external services from knowing who
   uses torcollect at which time and is thus necessary to support our users' privacy.
-* go to the documentroot of your webserver and wget
+* [x] go to the documentroot of your webserver and wget
   http://kozea.github.com/pygal.js/javascripts/pygal-tooltips.js
   and http://kozea.github.com/pygal.js/javascripts/svg.jquery.js
 
@@ -52,9 +52,9 @@ Setting up a torcollect server:
 able to execute in the console.
 * You'll find there documented the command torcollect server add. Use this command
 on every server you prepared in the step "Making a torserver ready for use with torcollect"
-* Install a webserver of your choice.
-* Copy the contents of web/ to the documentroot of your webserver
-* make sure the torcollect user is allowed to write on your webservers documentroot 
+* [x] Install a webserver of your choice.
+* [x] Copy the contents of web/ to the documentroot of your webserver
+* [x] make sure the torcollect user is allowed to write on your webservers documentroot 
 * Check if the correct paths are in /usr/local/lib/python2.7/dist-packages/torcollect/paths.py
 * You should now be able to execute the commands *torcollect collect* and *torcollect generate*
 * There are the two commands that do the routinely work. The first one acquires information from
