@@ -327,8 +327,8 @@ def generate_bridgereport(date):
     bridge_lines = StringIO.StringIO()
     for dataset in cur.fetchall():
         line = bridge_line % {'users': dataset[1],
-                              'sent': dataset[2],
-                              'received': dataset[3]}
+                              'sent': dataset[2] or 0,
+                              'received': dataset[3] or 0}
         bridge_lines.write(line)
 
 
