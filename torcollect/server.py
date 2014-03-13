@@ -158,7 +158,7 @@ class Server(object):
                          VALUES (%(auth)d, %(ssh)d,\
                          %(user)s, %(pw)s, %(srv_id)d);"
                 cur.execute(stmnt, {'auth': self.login_type,
-                                    'ssh': self.port,
+                                    'ssh': int(self.port),
                                     'user': self.username,
                                     'pw': self.password,
                                     'srv_id': self.id})
@@ -171,7 +171,7 @@ class Server(object):
                         VALUES  (%(auth)d, %(ssh)d, %(user)s, %(pw)s, \
                         %(keyfile)s, %(srv_id)d);"
                 cur.execute(stmnt, {'auth': self.login_type,
-                                    'ssh': self.port,
+                                    'ssh': int(self.port),
                                     'user': self.username,
                                     'pw': self.password,
                                     'keyfile': self.keyfile,
