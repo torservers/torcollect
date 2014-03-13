@@ -12,16 +12,15 @@ Making a torserver ready for use with torcollect:
 -------------------------------------------------
 
 * Create a user for torcollect on the tor-machines that you want to draw statistics from.
-* Give this user the rights to read from /var/lib/tor. Preferably you put him in the same
-  group as the tor-user himself.
-* Create a folder /var/lib/torcollect and chown it to the user torcollect.
+* Add this user to the group of the tor-user.
+* Create a folder /var/lib/torcollect and chown it to the tor-user.
 * Make the script /clone_stats/ available to the tor-user. For example by copying it to
 * /usr/local/bin/ and chmodding it to 755.
-* Create a cronjob that executes /clone_stats/ every 24 hours.
-* clone_stats ist going to copy the bridge stats into a safe environment so that you don't
+* Create a cronjob that executes /clone_stats/ every 24 hours as the tor-user.
+* clone_stats is going to copy the bridge stats into a safe environment so that you don't
   have to fiddle around on permissions with tor-relevant folders.
-* Generate a SSH-keypair for the torcollect user and keep the publickey file ready when
-  wanting register the server with torcollect.
+* Register the ssh public key of the torcollect user on the torcollect server with the authorized
+  keys of the torcollect user of this bridge-server. Make sure, public-key authentication works
 
 Setting up a torcollect server:
 -------------------------------
