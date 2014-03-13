@@ -78,16 +78,16 @@ class Server(object):
                      LGI_USER, LGI_PASSWORD, LGI_KEYFILE, SRV_IP \
                      FROM Server INNER JOIN Login \
                        ON (LGI_SRV_ID = SRV_ID) \
-                     WHERE SRV_IP = %(address)s;"
+                     WHERE SRV_IP = %(param)s;"
         elif type(adress_or_id) == int:
             stmnt = "SELECT SRV_ID, SRV_NAME, LGI_AUTHTYPE, LGI_SSHPORT, \
                      LGI_USER, LGI_PASSWORD, LGI_KEYFILE, SRV_IP \
                      FROM Server INNER JOIN Login \
                        ON (LGI_SRV_ID = SRV_ID) \
-                     WHERE SRV_ID = %(id)d;"
+                     WHERE SRV_ID = %(param)d;"
         else:
             return # Invalid input
-        cur.execute(stmnt, {"address": address})
+        cur.execute(stmnt, {"param": address_or_id})
         res = cur.fetchone()
         server = Server()
         server.id = res[0]
