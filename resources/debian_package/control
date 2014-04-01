@@ -5,6 +5,6 @@ Installed-Size: $SIZE
 Maintainer: Daniel <daniel@torservers.net>
 Architecture: all
 Version: 0.1
-Depends: apache2 (>= 2.2), python (>= 2.6), python-paramiko (>= 1.7), python-pip (>= 1.1), python-pygresql (>= 2.0), postgresql (>= 9.1)
+Depends: curl (>= 7.0), apache2 (>= 2.2), python (>= 2.6), python-paramiko (>= 1.7), python-pip (>= 1.1), python-pygresql (>= 2.0), python-lxml (>= 3.3), python-dev (>= 2.7), postgresql (>= 9.1)
 Description: monitoring TOR-bridge statistics.
  This program allows to generate graphical reports of TOR-bridges.

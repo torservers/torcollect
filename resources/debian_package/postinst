@@ -1,6 +1,16 @@
 # add user torcollect
 sudo useradd torcollect
 
+#create database
+su - pgresql
+echo "create user torcollect with password 'lel';\n" | psql
+echo "create database torcollect with owner torcollect;\n" | psql
+echo "grant all privileges on database torcollect to torcollect;\n" | psql
+exit
+su - torcollect
+psql -f /usr/share/torcollect/database.sql
+exit
+
 # install pygal
 sudo pip install python-pygal
 
