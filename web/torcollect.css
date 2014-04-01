@@ -27,6 +27,14 @@ body {
     padding-right:0px;
 }
 
+a {
+    color: #af0;
+}   
+
+a:visited {
+    color: #af0;
+}
+
 h2, h3, h4 {
     color: #eee;
 }

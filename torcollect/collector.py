@@ -229,7 +229,10 @@ def collect():
     for server, data in traffic_data.items():
         heartbeat_data = {}
         for line in data:
-            heartbeat = torcollect.heartbeat.Heartbeat.parse(line)
+            try:
+                heartbeat = torcollect.heartbeat.Heartbeat.parse(line)
+            except TypeError:
+                continue
             if not heartbeat_data.has_key(heartbeat.bridge_nr):
                 heartbeat_data[heartbeat.bridge_nr] = []
             heartbeat_data[heartbeat.bridge_nr].append(heartbeat)

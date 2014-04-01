@@ -21,6 +21,7 @@
 # If not, see http://www.gnu.org/licenses/.
 ###########################################################
 
+import os
 import datetime
 import torcollect.database
 import StringIO
@@ -62,9 +63,9 @@ main_page = """
         <div>
             %(usage_graph)s
         </div>
+        <div class="col-md-12" style="font-size:small;overflow:scroll;">&nbsp;%(menu)s</div>
     </div>
     <div class="row tc_table" id="reportcontent">
-        <div class="col-md-12">Please select a day to see detailed statistics</div>
     </div>
 
     <script type="text/javascript" src="statistics.js"></script>
@@ -183,8 +184,15 @@ def generate_main_page():
     for dataset in cur.fetchall():
         graphdata.append({'d': dataset[1], 'u': dataset[0]})
         pygal_graph.append(dataset[0])
+    reports = os.listdir(REPORTS)
+    menu = ""
+    for report in reports:
+        report = report.replace(".html","")
+        if re.match(r'\d{4}-\d{2}-\d{2}\.html',report):
+            menu += '<a href="javascript:load_day_report(\'%s\');">%s</a> &nbsp; - &nbsp;'%(report,report)
     page = main_page % {'graphdata': json.dumps(graphdata),
-                        'usage_graph': generate_main_graph(pygal_graph)}
+                        'usage_graph': generate_main_graph(pygal_graph),
+                        'menu': menu}
     mainpage = open(REPORTPAGE, "w")
     mainpage.write(page)
     mainpage.close()
