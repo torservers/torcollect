@@ -86,7 +86,17 @@ class MonthlyReport(object):
                         GROUP BY CCO_SHORT, REP_DATE \
                         ORDER BY CCO_SHORT, REP_DATE ASC) \
                     AS RT ON (RT.CCO_SHORT = CT.CCO_SHORT AND RT.REP_DATE = CT.DATE);"
-    
+    _BRGCN_STMNT = "SELECT COALESCE(COUNT (BT.BRG_ID),0), DT.DATE FROM \
+                        (SELECT BRG_ID, REP_DATE FROM Bridge \
+                            INNER JOIN Report ON (REP_BRG_ID = BRG_ID) \
+                         WHERE REP_DATE >= %(start_date)s AND REP_DATE <= %(end_date)s) AS BT \
+                         RIGHT JOIN \
+                        (SELECT CURRENT_DATE + i AS DATE FROM \
+                            GENERATE_SERIES (DATE %(start_date)s - CURRENT_DATE, \
+                                             DATE %(end_date)s - CURRENT_DATE) i \
+                        ) AS DT ON (DT.DATE = BT.REP_DATE) \
+                    GROUP BY BT.REP_DATE, DT.DATE ORDER BY DT.DATE ASC;"
+
     _HTML_FRAME = """
     <!DOCTYPE html>
     <html>
@@ -107,6 +117,8 @@ class MonthlyReport(object):
         minimize the risk of de-anonymization, TOR rounds the actual figure up to 
         multiples of 8.
         %(overall_usage_graph)s
+        <h2> Bridges </h2>
+        %(bridgecount_graph)s
         <h2> Traffic Information </h2>
         %(overall_traffic_graph)s
         <h2> Distribution by Country </h2>
@@ -137,6 +149,7 @@ class MonthlyReport(object):
         self.traffic_received = []
         self.country_overall_data = {}
         self.country_usage_data = {}
+        self.bridgecount_data = []
 
         # proceed with gathering the needed data
         self.gather_data()
@@ -170,6 +183,12 @@ class MonthlyReport(object):
             if not self.country_usage_data.has_key(cc):
                 self.country_usage_data[cc] = []
             self.country_usage_data[cc].append(dataset[1])
+        
+        cur.execute(MonthlyReport._BRGCN_STMNT, {'start_date': self.start_date.isoformat(),
+                                   'end_date'  : self.end_date.isoformat()})
+
+        for dataset in cur.fetchall():
+            self.bridgecount_data.append(dataset[0])
 
     def render(self):
         overall_usage_graph = self.generate_overall_usage_graph(self.usage_data)
@@ -177,8 +196,10 @@ class MonthlyReport(object):
                                                                self.traffic_received)
         worldmap = self.generate_worldmap(self.country_overall_data)
         country_history_graph = self.generate_country_graph(self.country_usage_data)
+        bridgecount_graph = self.generate_bridgecount_graph(self.bridgecount_data)
         html = MonthlyReport._HTML_FRAME%{'overall_usage_graph': overall_usage_graph,
                                           'overall_traffic_graph': overall_traffic_graph,
+                                          'bridgecount_graph':bridgecount_graph,
                                           'worldmap': worldmap,
                                           'country_graph': country_history_graph,
                                           'title': "Torserver - Monthly Report",
@@ -212,7 +233,14 @@ class MonthlyReport(object):
         g.x_labels = map(str, range(1,len(usage_data['us'])+1))
         for ccode, data in usage_data.items():
             g.add(ccode, data)
-        return torcollect.graphs.clean_graph(g.render())           
+        return torcollect.graphs.clean_graph(g.render())
+
+    def generate_bridgecount_graph(self, usagedata):
+        g = pygal.Line(fill=True, height=400)
+        g.x_labels =  map(str, range(1,len(usagedata)+1))
+        g.title = "Running Bridges"
+        g.add('Bridges', usagedata)
+        return torcollect.graphs.clean_graph(g.render())
 
     def check_validity(self):
         """ Check if there is all data needed to generate the report """
