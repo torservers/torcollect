@@ -35,7 +35,7 @@ LOGPATH = "/var/lib/torcollect/"
 NOTICEPATH = "/var/log/torcollect/"
 NUMBERMATCH = re.compile("^\d*")
 PATHSTRIP = re.compile("^[^ ]* ")
-ERRORMAIL_TO = ["admin@torservers.net", "grindhold@skarphed.org"]
+ERRORMAIL_TO = ["admin@torservers.net"]
 ME = "torcollect@localhost"
 
 # TODO: See how to extract IPs of the bridges to log them

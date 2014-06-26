@@ -130,7 +130,6 @@ class Server(object):
         ret = []
         for row in cur.fetchall():
             srv = Server()
-            print row
             srv.name = row[0]
             srv.ip = row[1]
             if full:
