@@ -50,48 +50,51 @@ def collect():
     transports_data = {}
     traffic_data = {}
     for server in servers:
-        # Establish SSH connection
-        ssh_connection = paramiko.SSHClient()
-        ssh_connection.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        if server.get_login_type() == torcollect.server.LoginType.PASSWORD:
-            ssh_connection.connect(server.get_ip(), server.get_port(),
-                                   server.get_username(),
-                                   server.get_password())
-        else:
-            keyfile = tempfile.NamedTemporaryFile("w")
-            keyfile.write(server.get_keyfile())
-            keyfile.flush()
-            ssh_connection.connect(server.get_ip(),
-                                   port=server.get_port(),
-                                   username=server.get_username(),
-                                   password=server.get_password(),
-                                   key_filename=keyfile.name)
+        try:
+            # Establish SSH connection
+            ssh_connection = paramiko.SSHClient()
+            ssh_connection.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            if server.get_login_type() == torcollect.server.LoginType.PASSWORD:
+                ssh_connection.connect(server.get_ip(), server.get_port(),
+                                       server.get_username(),
+                                       server.get_password())
+            else:
+                keyfile = tempfile.NamedTemporaryFile("w")
+                keyfile.write(server.get_keyfile())
+                keyfile.flush()
+                ssh_connection.connect(server.get_ip(),
+                                       port=server.get_port(),
+                                       username=server.get_username(),
+                                       password=server.get_password(),
+                                       key_filename=keyfile.name)
 
-        # Acquire information
-        #  - Acquire country-related information
-        con_stdin, con_stdout, con_stderr = ssh_connection.exec_command(
-            'grep -r bridge-ips %s 2> /dev/null' % LOGPATH)
-        country_data[server] = con_stdout.read().split("\n")
-        #  - Acquire transport-related information
-        con_stdin, con_stdout, con_stderr = ssh_connection.exec_command(
-            'grep -r bridge-ip-transports %s 2> /dev/null' % LOGPATH)
-        transports_data[server] = con_stdout.read().split("\n")
-        #  - Acquire traffic-related information
-        # Grep every Heartbeat-line from the notices-files that are from yesterday
-        # and the day before yesterday.
-        # The day before yesterday is necessary because we need a reference point
-        # to calculate the difference from todays traffic to get the traffic that
-        # has been transported.
-        command = 'TC_ONEDAYAGO="$(date --date="1 day ago" +"%%b %%d")" ; \
-                   TC_TWODAYAGO="$(date --date="2 days ago" +"%%b %%d")" ; \
-                   grep Heartbeat %snotices* 2> /dev/null | grep -P "$TC_ONEDAYAGO|$TC_TWODAYAGO"'  
-        con_stdin, con_stdout, con_stderr = ssh_connection.exec_command(
-            command % LOGPATH)
-        traffic_data[server] = con_stdout.read().split("\n")
-        traffic_data[server].remove('')
-        if server.get_login_type() == torcollect.server.LoginType.PUBLICKEY:
-            keyfile.close()
-        ssh_connection.close()
+            # Acquire information
+            #  - Acquire country-related information
+            con_stdin, con_stdout, con_stderr = ssh_connection.exec_command(
+                'grep -r bridge-ips %s 2> /dev/null' % LOGPATH)
+            country_data[server] = con_stdout.read().split("\n")
+            #  - Acquire transport-related information
+            con_stdin, con_stdout, con_stderr = ssh_connection.exec_command(
+                'grep -r bridge-ip-transports %s 2> /dev/null' % LOGPATH)
+            transports_data[server] = con_stdout.read().split("\n")
+            #  - Acquire traffic-related information
+            # Grep every Heartbeat-line from the notices-files that are from yesterday
+            # and the day before yesterday.
+            # The day before yesterday is necessary because we need a reference point
+            # to calculate the difference from todays traffic to get the traffic that
+            # has been transported.
+            command = 'TC_ONEDAYAGO="$(date --date="1 day ago" +"%%b %%d")" ; \
+                       TC_TWODAYAGO="$(date --date="2 days ago" +"%%b %%d")" ; \
+                       grep Heartbeat %snotices* 2> /dev/null | grep -P "$TC_ONEDAYAGO|$TC_TWODAYAGO"'  
+            con_stdin, con_stdout, con_stderr = ssh_connection.exec_command(
+                command % LOGPATH)
+            traffic_data[server] = con_stdout.read().split("\n")
+            traffic_data[server].remove('')
+            if server.get_login_type() == torcollect.server.LoginType.PUBLICKEY:
+                keyfile.close()
+            ssh_connection.close()
+        except Exception, e:
+            print "Failed getting data from server %s due to: %s"%(server.get_ip(), e.message)
 
     # Declare SQL stmnts
 
