@@ -24,6 +24,8 @@
 import paramiko
 import tempfile
 import re
+import smtplib
+from email.mime.text import MIMEText
 
 import torcollect.server
 import torcollect.database
@@ -33,7 +35,8 @@ LOGPATH = "/var/lib/torcollect/"
 NOTICEPATH = "/var/log/torcollect/"
 NUMBERMATCH = re.compile("^\d*")
 PATHSTRIP = re.compile("^[^ ]* ")
-
+ERRORMAIL_TO = ["admin@torservers.net", "grindhold@skarphed.org"]
+ME = "torcollect@localhost"
 
 # TODO: See how to extract IPs of the bridges to log them
 # TODO: Actually log individual Bridge-IPs
@@ -94,7 +97,16 @@ def collect():
                 keyfile.close()
             ssh_connection.close()
         except Exception, e:
-            print "Failed getting data from server %s due to: %s"%(server.get_ip(), e.message)
+            try:
+                mailsrv = smtplib.SMTP('localhost')
+                mail = MIMEText(FAILUREMAIL_TEXT%{'name':server.get_name(), 'ip':server.get_ip()})
+                mail['Subject'] = "[torcollect] Failure for %s"%(server.get_name())
+                mail['From'] = ME
+                mail['To'] = ERRORMAIL_TO[0]
+                mailsrv.sendmail(ME, ERRORMAIL_TO, mail.as_string())
+                mailsrv.quit()
+            except:
+                print "Failed getting data from server %s due to: %s"%(server.get_ip(), e.message)
 
     # Declare SQL stmnts
 
@@ -283,3 +295,32 @@ def _get_sent_received(data):
     sent = newest_heartbeat.sent - reference_heartbeat.sent
     received = newest_heartbeat.received - reference_heartbeat.received
     return sent, received
+
+FAILUREMAIL_TEXT = """
+    Hi there, torservers-team!
+    This is torcollect, your humble bridge-statistics analysis system.
+    I'm afraid could not reach the server %(name)s on the IP %(ip)s today.
+    
+    Either the server has been moved somewhere without telling me or
+    there is some severe failure that causes the server to not respond.
+
+    
+    If the server has moved:
+    Connect to my machine as the user torcollect and do this stuff:
+    
+        torcollect server -d %(ip)s
+    
+    and add the new server via:
+    
+        torcollect server add <parameters>
+    
+    you can find help concerning the parameters with
+    
+        torcollect help
+
+    
+    If the server has an error:
+    Fix the error :)
+
+    Have a nice day!
+"""
